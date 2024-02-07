@@ -1,8 +1,8 @@
 import express, { Router } from 'express';
-import { chatWithBot } from '../controllers/chatBot.controller';
+import { chatWithBot, newChat } from '../controllers/chatBot.controller';
 
 const BotRouter: Router = express.Router();
 
-BotRouter.post('/chatbot', chatWithBot);
+BotRouter.post('/chatbot', chatWithBot).post('/new', newChat);
 console.log('chatbot router loaded');
 export default BotRouter;
