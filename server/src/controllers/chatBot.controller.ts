@@ -87,6 +87,8 @@ const chatWithBot = async (req: Request, res: Response) => {
         role: 'user',
         content: msg.role + msg.content,
       })),
+      max_tokens: 2000,
+      temperature: 0.3,
       stream: true,
     });
 
