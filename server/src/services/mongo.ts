@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-const mongoUri = process.env.MONGO_URI;
+const mongoUri = process.env.MONGO_URI_LOCAL;
 
 mongoose.connection.once('open', () => {
   console.log('MongoDB connection ready');
@@ -17,7 +17,6 @@ mongoose.connection.on('close', () => {
   console.log('MongoDB connection closed');
 });
 
-console.log('mongoUri', mongoUri);
 export const connectMongo = async () => {
   try {
     await mongoose.connect(mongoUri as string);
