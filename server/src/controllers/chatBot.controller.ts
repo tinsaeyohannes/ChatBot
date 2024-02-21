@@ -15,7 +15,7 @@ const addChatName = async (userMessage: string, botMessage: string) => {
       messages: [
         {
           role: 'user',
-          content: `make a very short and clear title about this chat from: user message:${userMessage} and bot message: ${botMessage}`,
+          content: `make a very short and clear title about this chat from this message:${userMessage} and this message: ${botMessage} but don't mention about user and bot just summarize the whole conversation in one sentence`,
         },
       ],
       max_tokens: 2000,
@@ -119,7 +119,7 @@ const chatWithBot = async (req: Request, res: Response) => {
       model: 'gpt-3.5-turbo',
       messages: history.map((msg) => ({
         role: 'user',
-        content: `use the following previous context with expressive emojis like 😊 and so on:  ${msg.role + msg.content}`,
+        content: `use the following previous context and use expressive emojis also add a bit of some sarcastic tones when answering :  ${msg.role + msg.content}`,
       })),
       max_tokens: 2000,
       temperature: 0.7,
@@ -130,17 +130,21 @@ const chatWithBot = async (req: Request, res: Response) => {
       const botStream = chunk.choices[0]?.delta?.content || '';
       process.stdout.write(botStream || '');
     }
+    const botMessage = (await stream.finalChatCompletion()).choices[0].message
+      .content;
 
     conversationHistory.history.push({
-      chatName: '',
+      chatName: conversationHistory.history[0].chatName,
       user: message,
-      bot: (await stream.finalChatCompletion()).choices[0].message.content,
+      bot: botMessage,
     });
 
     await conversationHistory.save();
-    res
-      .status(200)
-      .json((await stream.finalChatCompletion()).choices[0].message);
+    res.status(200).json({
+      chatName: conversationHistory.history[0].chatName,
+      user: message,
+      message: botMessage,
+    });
   } catch (error) {
     console.error((error as Error).message);
     res.status(500).json('Internal Server Error!');
