@@ -5,11 +5,36 @@ import HistoryModel from '../models/ConversationHistory.mongo';
 console.log(process.env.OPENAI_API_KEY);
 
 const openai = new OpenAI({
-  apiKey:
-    process.env.OPENAI_API_KEY ||
-    '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', // This is the default and can be omitted
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
+const addChatName = async (userMessage: string, botMessage: string) => {
+  try {
+    const titleStream = openai.beta.chat.completions.stream({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: `make a very short and clear title about this chat from: user message:${userMessage} and bot message: ${botMessage}`,
+        },
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
+      stream: true,
+    });
+
+    for await (const chunk of titleStream) {
+      const botStream = chunk.choices[0]?.delta?.content || '';
+      process.stdout.write(botStream || '');
+    }
+    const chatName = (await titleStream.finalChatCompletion()).choices[0]
+      .message.content;
+    console.log('chatName from addChatName', chatName);
+    return chatName;
+  } catch (error) {
+    console.error(error);
+  }
+};
 const newChat = async (req: Request, res: Response) => {
   const { message }: { message: string } = req.body;
 
@@ -19,11 +44,11 @@ const newChat = async (req: Request, res: Response) => {
 
   try {
     const stream = openai.beta.chat.completions.stream({
-      model: 'gpt-3.5-turbo-16k',
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'user',
-          content: message,
+          content: `use expressive emojis also add a bit of some sarcastic tones when answering : ${message}`,
         },
       ],
       stream: true,
@@ -33,22 +58,31 @@ const newChat = async (req: Request, res: Response) => {
       const botStream = chunk.choices[0]?.delta?.content || '';
       process.stdout.write(botStream || '');
     }
+    const botMessage = (await stream.finalChatCompletion()).choices[0].message
+      .content;
 
-    const newChat = new HistoryModel({
-      history: [
-        {
-          chatName: '',
-          user: message,
-          bot: (await stream.finalChatCompletion()).choices[0].message.content,
-        },
-      ],
-    });
+    if (botMessage) {
+      const chatName = await addChatName(message, botMessage);
 
-    await newChat.save();
+      console.log('chatName from newChat', chatName);
 
-    res
-      .status(200)
-      .json((await stream.finalChatCompletion()).choices[0].message.content);
+      const newChat = new HistoryModel({
+        history: [
+          {
+            chatName: chatName,
+            user: message,
+            bot: botMessage,
+          },
+        ],
+      });
+      await newChat.save();
+
+      res.status(200).json({
+        chatName: chatName,
+        user: message,
+        message: botMessage,
+      });
+    }
   } catch (error) {
     console.error((error as Error).message);
     res.status(500).json('Internal Server Error!');
@@ -77,7 +111,7 @@ const chatWithBot = async (req: Request, res: Response) => {
 
   history.push({
     role: 'user',
-    content: message as string,
+    content: message,
   });
 
   try {
@@ -85,10 +119,10 @@ const chatWithBot = async (req: Request, res: Response) => {
       model: 'gpt-3.5-turbo',
       messages: history.map((msg) => ({
         role: 'user',
-        content: msg.role + msg.content,
+        content: `use the following previous context with expressive emojis like 😊 and so on:  ${msg.role + msg.content}`,
       })),
       max_tokens: 2000,
-      temperature: 0.3,
+      temperature: 0.7,
       stream: true,
     });
 
@@ -112,6 +146,7 @@ const chatWithBot = async (req: Request, res: Response) => {
     res.status(500).json('Internal Server Error!');
   }
 };
+
 const generateImages = async (req: Request, res: Response) => {
   const { prompt }: { prompt: string } = req.body;
   try {
