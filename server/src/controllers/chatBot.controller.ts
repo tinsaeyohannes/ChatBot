@@ -175,4 +175,45 @@ const generateImages = async (req: Request, res: Response) => {
   }
 };
 
-export { chatWithBot, newChat, generateImages };
+const getAllChatHistory = async (req: Request, res: Response) => {
+  try {
+    const allChats = await HistoryModel.find();
+    if (!allChats) {
+      return res.status(404).json({
+        message: 'No chats found',
+      });
+    } else {
+      res.status(200).json(allChats);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+const getChatById = async (req: Request, res: Response) => {
+  const { id } = req.query;
+  try {
+    // const chatId = HistoryModel.findById(id);
+
+    // if (!chatId) {
+    //   return res.status(404).json({
+    //     message: 'Chat not found',
+    //   });
+    // }
+
+    const chat = await HistoryModel.findOne({ _id: id });
+
+    if (!chat) {
+      return res.status(404).json({
+        message: 'Chat not found',
+      });
+    } else {
+      res.status(200).json(chat);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+export { chatWithBot, newChat, generateImages, getAllChatHistory, getChatById };
