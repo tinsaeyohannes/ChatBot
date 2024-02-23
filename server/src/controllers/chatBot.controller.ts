@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
 import HistoryModel from '../models/ConversationHistory.mongo';
-
-console.log(process.env.OPENAI_API_KEY);
+import { translate } from '@vitalets/google-translate-api';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -15,7 +14,7 @@ const addChatName = async (userMessage: string, botMessage: string) => {
       messages: [
         {
           role: 'user',
-          content: `make a very short and clear title about this chat from this message:${userMessage} and this message: ${botMessage} but don't mention about user and bot just summarize the whole conversation in one sentence`,
+          content: `make a very short and clear title about this chat from this message:${userMessage} and this message: ${botMessage} but don't mention about user and bot just summarize the whole conversation in one sentence and if possible in four words!`,
         },
       ],
       max_tokens: 2000,
@@ -35,9 +34,9 @@ const addChatName = async (userMessage: string, botMessage: string) => {
     console.error(error);
   }
 };
+
 const newChat = async (req: Request, res: Response) => {
   const { message }: { message: string } = req.body;
-
   if (!message) {
     return res.status(400).json('Please enter a message');
   }
@@ -77,10 +76,12 @@ const newChat = async (req: Request, res: Response) => {
       });
       await newChat.save();
 
+      const { text } = await translate(botMessage, { to: 'am' });
+
       res.status(200).json({
         chatName: chatName,
         user: message,
-        message: botMessage,
+        message: text,
       });
     }
   } catch (error) {
@@ -151,30 +152,6 @@ const chatWithBot = async (req: Request, res: Response) => {
   }
 };
 
-const generateImages = async (req: Request, res: Response) => {
-  const { prompt }: { prompt: string } = req.body;
-  try {
-    const response = await openai.images.generate({
-      model: 'dall-e-3',
-      prompt: `I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS: ${prompt}`,
-      n: 1,
-      size: '1024x1024',
-      response_format: 'url',
-      style: 'vivid',
-      quality: 'hd',
-    });
-
-    const imageData = response.data;
-    res.status(200).json(imageData);
-  } catch (error) {
-    console.error((error as Error).message);
-    res.status(500).json({
-      error: (error as Error).message,
-      message: 'Internal Server Error!',
-    });
-  }
-};
-
 const getAllChatHistory = async (req: Request, res: Response) => {
   try {
     const allChats = await HistoryModel.find();
@@ -190,18 +167,12 @@ const getAllChatHistory = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 const getChatById = async (req: Request, res: Response) => {
-  const { id } = req.query;
+  const { id } = req.params;
+  console.log('id', id);
   try {
-    // const chatId = HistoryModel.findById(id);
-
-    // if (!chatId) {
-    //   return res.status(404).json({
-    //     message: 'Chat not found',
-    //   });
-    // }
-
-    const chat = await HistoryModel.findOne({ _id: id });
+    const chat = await HistoryModel.findById(id);
 
     if (!chat) {
       return res.status(404).json({
@@ -216,4 +187,27 @@ const getChatById = async (req: Request, res: Response) => {
   }
 };
 
-export { chatWithBot, newChat, generateImages, getAllChatHistory, getChatById };
+const deleteChat = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    if (id) {
+      res.status(400).json({ error: 'Please enter an chat id' });
+    }
+    const chat = await HistoryModel.findByIdAndDelete(id);
+
+    if (!chat) {
+      return res.status(404).json({
+        message: 'Chat not found',
+      });
+    } else {
+      res.status(200).json({
+        message: 'Chat deleted successfully',
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+export { chatWithBot, newChat, getAllChatHistory, getChatById, deleteChat };
