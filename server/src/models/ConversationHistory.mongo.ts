@@ -1,9 +1,11 @@
-import mongoose, { type Schema } from 'mongoose';
+import mongoose, { type ObjectId, type Schema } from 'mongoose';
 
 export interface ConversationTurn {
+  _id?: ObjectId;
   chatName: string;
   user: string;
   bot: string | null;
+  translatedMessage?: string;
 }
 
 interface ConversationHistoryDocument extends Document {
@@ -24,6 +26,9 @@ const HistorySchema: Schema = new mongoose.Schema(
         bot: {
           type: String || null,
           required: true,
+        },
+        translatedMessage: {
+          type: String,
         },
       },
     ],
