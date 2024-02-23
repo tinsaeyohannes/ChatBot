@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DrawerBarContent;
+export default React.memo(DrawerBarContent);
