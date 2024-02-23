@@ -2,8 +2,11 @@ import express, { Express } from 'express';
 import BotRouter from './routers/chatBot.router';
 import morgan from 'morgan';
 import apiKeyMiddleware from './middleware/ApiKeyMiddleWare';
+import cors from 'cors';
 
 const app: Express = express();
+
+app.use(cors());
 
 app.use(morgan('tiny'));
 
