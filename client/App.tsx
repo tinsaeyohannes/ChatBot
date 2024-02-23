@@ -10,6 +10,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import DrawerBarContent from './src/drawerBar/DrawerBarContent';
 import {useColorScheme} from 'react-native';
 import {userStore} from './src/store/useStore';
+import {useChatStore} from './src/store/useChatStore';
 
 const Drawer = createDrawerNavigator();
 
@@ -24,6 +25,9 @@ function App() {
     isDarkMode: state.isDarkMode,
     setIsDarkMode: state.setIsDarkMode,
   }));
+  const {getChatHistory} = useChatStore(state => ({
+    getChatHistory: state.getChatHistory,
+  }));
 
   const isDark = useColorScheme() === 'dark';
 
@@ -36,6 +40,11 @@ function App() {
     SystemNavigationBar.setNavigationColor(isDark ? '#101010' : '#E5E5E5');
     SystemNavigationBar.setNavigationBarContrastEnforced(true);
   }, [isDark]);
+
+  React.useEffect(() => {
+    getChatHistory();
+  }, [getChatHistory]);
+
   return (
     <NavigationContainer>
       <Drawer.Navigator
@@ -59,7 +68,7 @@ function App() {
         drawerContent={DrawerBarContentComponent}>
         <Drawer.Screen
           name="Chat"
-          children={() => <ChatScreen isDarkMode={isDarkMode} />}
+          component={ChatScreen}
           options={{
             title: 'Chat Bot',
             headerShown: false,
@@ -67,7 +76,7 @@ function App() {
         />
         <Drawer.Screen
           name="Profile"
-          children={() => <ProfileScreen isDarkMode={isDarkMode} />}
+          component={ProfileScreen}
           options={{
             swipeEnabled: false,
             headerShown: false,
