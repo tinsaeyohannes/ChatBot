@@ -1,4 +1,4 @@
-import React, {useEffect, type FC} from 'react';
+import React, {useEffect, useState, type FC} from 'react';
 import {
   Image,
   ScrollView,
@@ -19,20 +19,36 @@ import {
 } from 'react-native-responsive-screen';
 import type {ParamListBase} from '@react-navigation/native';
 import type {DrawerNavigationProp} from '@react-navigation/drawer';
+import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
+import {useChatStore} from '../store/useChatStore';
 
 type ChatScreenProps = {
   navigation: DrawerNavigationProp<ParamListBase>;
+  route: any;
 };
 
-const ChatScreen: FC<ChatScreenProps> = ({navigation}): React.JSX.Element => {
+const ChatScreen: FC<ChatScreenProps> = ({
+  navigation,
+  route,
+}): React.JSX.Element => {
+  const chat: ChatHistoryTypes = route.params?.chat;
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
+  const {newChat} = useChatStore(state => ({
+    newChat: state.newChat,
+  }));
+
+  const [userMessage, setUserMessage] = useState({
+    sender: 'user',
+    message: '',
+  });
 
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
   }, [isDarkMode]);
 
+  console.log('chat', chat);
   return (
     <SafeAreaView
       style={[
@@ -66,41 +82,44 @@ const ChatScreen: FC<ChatScreenProps> = ({navigation}): React.JSX.Element => {
         </View>
 
         <ScrollView>
-          <View style={styles.messageContainer}>
-            <View style={styles.senderPicContainer}>
-              <Image
-                source={{
-                  uri: 'https://i.pravatar.cc/300',
-                }}
-                style={styles.senderPic}
-              />
+          {chat?.history.map(message => (
+            <View style={styles.messageContainer} key={message._id}>
+              <View style={styles.senderPicContainer}>
+                <Image
+                  source={
+                    message.sender === 'user'
+                      ? {
+                          uri: 'https://i.pravatar.cc/300',
+                        }
+                      : require('../assets/icons/ai.png')
+                  }
+                  style={styles.senderPic}
+                />
+              </View>
+              <View>
+                <Text style={styles.senderName}>
+                  {message.sender === 'user' ? 'You' : 'AI'}
+                </Text>
+                <Text style={styles.message}>{message.message}</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.senderName}>You</Text>
-              <Text>Hi There!</Text>
-            </View>
-          </View>
-
-          <View style={styles.messageContainer}>
-            <View style={styles.senderPicContainer}>
-              <Image
-                source={require('../assets/icons/ai.png')}
-                style={styles.senderPic}
-              />
-            </View>
-            <View>
-              <Text style={styles.senderName}>AI</Text>
-              <Text style={styles.message}>
-                🙄 Oh, hey there... how thrilling to see you 🙄
-              </Text>
-            </View>
-          </View>
+          ))}
         </ScrollView>
         <View>
           <View style={styles.chatInputContainer}>
-            <TextInput placeholder="Message" style={styles.inputField} />
+            <TextInput
+              placeholder="Message"
+              style={styles.inputField}
+              onChangeText={msg =>
+                setUserMessage({...userMessage, message: msg})
+              }
+            />
 
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => {
+                newChat(userMessage, chat?._id);
+              }}>
               <Feather
                 name="send"
                 size={24}
@@ -146,6 +165,7 @@ const styles = StyleSheet.create({
   senderPicContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: '#E5E5E5',
     width: hp(7),
     height: hp(7),
@@ -158,12 +178,16 @@ const styles = StyleSheet.create({
     height: hp(6),
     borderRadius: 50,
   },
+
   senderName: {
     fontWeight: 'bold',
+    fontSize: hp(2.5),
+    color: 'lightblue',
   },
   message: {
-    fontSize: hp(2),
-    width: wp(60),
+    fontSize: hp(2.5),
+    width: wp(75),
+    color: '#E5E5E5',
   },
   messageContainer: {
     flexDirection: 'row',
@@ -180,6 +204,7 @@ const styles = StyleSheet.create({
   },
   inputField: {
     width: wp(60),
+    marginLeft: hp(1),
   },
 });
 
