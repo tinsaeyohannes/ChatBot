@@ -1,31 +1,36 @@
-import React from 'react';
-import {
-  DrawerContentScrollView,
-  type DrawerContentComponentProps,
-} from '@react-navigation/drawer';
+import React, {useEffect, type FC} from 'react';
+import {type DrawerContentComponentProps} from '@react-navigation/drawer';
 import {StyleSheet} from 'react-native';
 import ConversationHistoryScreen from '../screens/ConversationHistoryScreen';
 import {userStore} from '../store/useStore';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {useChatStore} from '../store/useChatStore';
 
-const DrawerBarContent = (
-  props: DrawerContentComponentProps,
-): React.JSX.Element => {
+type DrawerBarContentProps = {
+  navigation: DrawerContentComponentProps['navigation'];
+};
+
+const DrawerBarContent: FC<DrawerBarContentProps> = ({
+  navigation,
+}): React.JSX.Element => {
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
+  const {getChatHistory} = useChatStore(state => ({
+    getChatHistory: state.getChatHistory,
+  }));
+
+  useEffect(() => {
+    getChatHistory();
+  }, [getChatHistory]);
+
   return (
     <SafeAreaView
       style={[
         styles.safeAreaViewContainer,
         isDarkMode ? styles.darkBg : styles.lightBg,
       ]}>
-      <DrawerContentScrollView
-        {...props}
-        scrollEnabled
-        contentContainerStyle={styles.DrawerContentScrollView}>
-        <ConversationHistoryScreen />
-      </DrawerContentScrollView>
+      <ConversationHistoryScreen navigation={navigation} />
     </SafeAreaView>
   );
 };
