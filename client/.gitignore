@@ -68,7 +68,7 @@ yarn-error.log
 # bak file
 /bak
 Project-requirement.txt
-
+EncounteredIssues.txt
 # React Native
 /android/app/build
 index.android.bundle
