@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {useEffect, type FC} from 'react';
 import {
+  FlatList,
   Image,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -15,19 +15,45 @@ import {
 } from 'react-native-responsive-screen';
 import {userStore} from '../store/useStore';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {useChatStore} from '../store/useChatStore';
+import {formatDistanceToNow} from 'date-fns';
+import type {DrawerNavigationHelpers} from '@react-navigation/drawer/lib/typescript/src/types';
 
-const ConversationHistoryScreen = (): React.JSX.Element => {
+type ConversationHistoryScreenProps = {
+  navigation: DrawerNavigationHelpers;
+};
+
+const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
+  navigation,
+}): React.JSX.Element => {
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
 
+  const {conversationHistory} = useChatStore(state => ({
+    conversationHistory: state.conversationHistory,
+  }));
+
+  useEffect(() => {
+    console.log('conversationHistory useEffect', conversationHistory);
+    console.log(
+      'history useEffect',
+      conversationHistory.map(item => item.history),
+    );
+  }, [conversationHistory]);
+
   const truncateString = (str: string) => {
-    if (str.length > 24) {
-      return str.slice(0, 24) + '...';
+    if (str.length > 34) {
+      return str.slice(0, 30) + '...';
     } else {
       return str;
     }
   };
+
+  const formatDate = (date: Date) => {
+    return formatDistanceToNow(date, {addSuffix: true});
+  };
+
   return (
     <View style={styles.safeAreaViewContainer}>
       <StatusBar
@@ -42,44 +68,32 @@ const ConversationHistoryScreen = (): React.JSX.Element => {
           <TextInput placeholder="Search" style={styles.inputField} />
         </View>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <TouchableOpacity>
-          <View style={styles.listItemContainer}>
-            <Text
-              style={[
-                styles.text,
-                isDarkMode ? styles.lightText : styles.darkText,
-              ]}>
-              {truncateString('List Item 1 Lorem ipsum dolor sit')}
-            </Text>
-            <Text
-              style={[
-                styles.dateText,
-                isDarkMode ? styles.lightText : styles.darkText,
-              ]}>
-              3 min ago
-            </Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <View style={styles.listItemContainer}>
-            <Text
-              style={[
-                styles.text,
-                isDarkMode ? styles.lightText : styles.darkText,
-              ]}>
-              {truncateString('List Item 1 Lorem ipsum dolor sit')}
-            </Text>
-            <Text
-              style={[
-                styles.dateText,
-                isDarkMode ? styles.lightText : styles.darkText,
-              ]}>
-              3 min ago
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
+      <FlatList
+        data={conversationHistory || []}
+        showsVerticalScrollIndicator={false}
+        keyExtractor={item => item._id}
+        renderItem={({item}) => (
+          <TouchableOpacity
+            onPress={() => {
+              const chat = item;
+              navigation.navigate('Chat', {chat});
+            }}>
+            <View style={styles.listItemContainer}>
+              <Text
+                style={[
+                  styles.text,
+                  isDarkMode ? styles.lightText : styles.darkText,
+                ]}>
+                {truncateString(item?.chatName)}
+              </Text>
+              <Text style={[styles.dateText]}>
+                {formatDate(item.createdAt)}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+
       <View style={styles.profileContainer}>
         <TouchableOpacity style={styles.profileButton}>
           <Image
@@ -105,16 +119,17 @@ const styles = StyleSheet.create({
   },
   listItemContainer: {
     margin: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
+    // flexDirection: 'row',
+    // alignItems: 'center',
     justifyContent: 'space-between',
   },
   text: {
     fontSize: hp(2.2),
-    width: '80%',
+    width: '95%',
   },
   dateText: {
     fontSize: hp(1.5),
+    color: 'gray',
   },
   darkText: {
     color: '#000',
@@ -169,4 +184,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ConversationHistoryScreen;
+export default React.memo(ConversationHistoryScreen);
