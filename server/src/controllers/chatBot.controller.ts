@@ -1,10 +1,6 @@
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
 import HistoryModel from '../models/ConversationHistory.mongo';
-// import { translate } from '@vitalets/google-translate-api';
-// import { HttpProxyAgent } from 'http-proxy-agent';
-
-// const agent = new HttpProxyAgent('http://103.152.112.145');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -46,25 +42,6 @@ const newChat = async (req: Request, res: Response) => {
   if (!message) {
     return res.status(400).json('Please enter a message');
   }
-  /* The code below is commented out because of ip address problem */
-  // let msg = '';
-
-  // if (language !== 'en') {
-  //   return await translate(message, {
-  //     to: 'en',
-  //     fetchOptions: { agent },
-  //   })
-  //     .then(({ text }) => {
-  //       msg = text;
-  //     })
-  //     .catch((error) => {
-  //       console.error('Translation error:', error.message);
-  //       res.status(500).json({ message: 'Translation error occurred.' });
-  //       return; // Exit the function to prevent further execution
-  //     });
-  // } else {
-  //   msg = message;
-  // }
 
   try {
     res.writeHead(200, {
@@ -112,13 +89,6 @@ const newChat = async (req: Request, res: Response) => {
 
       console.log('chatName from newChat', chatName);
 
-      /* The code below is commented out because of ip address problem */
-
-      // const { text } = await translate(botMessage, {
-      //   to: language,
-      //   fetchOptions: { agent },
-      // });
-
       const newChat = new HistoryModel({
         chatName: chatName,
         history: [
@@ -134,12 +104,6 @@ const newChat = async (req: Request, res: Response) => {
         message: botMessage,
       });
 
-      /* The code below is commented out because of ip address problem */
-
-      // if (language !== 'en') {
-      //   newChat.history[0].translatedMessage = text;
-      // }
-
       await newChat.save();
     }
   } catch (error) {
@@ -151,11 +115,7 @@ const newChat = async (req: Request, res: Response) => {
 };
 
 const chatWithBot = async (req: Request, res: Response) => {
-  const {
-    message,
-    id,
-    language,
-  }: { message: string; id: string; language: string } = req.body;
+  const { message, id }: { message: string; id: string } = req.body;
 
   console.log('message', message);
 
@@ -165,20 +125,6 @@ const chatWithBot = async (req: Request, res: Response) => {
   if (!message) {
     return res.status(400).json('Please enter a message');
   }
-
-  /* The code below is commented out because of ip address problem */
-
-  // let msg = '';
-
-  // if (language !== 'en') {
-  //   const userMessage = await translate(message, {
-  //     to: 'en',
-  //     fetchOptions: { agent },
-  //   });
-  //   msg = userMessage.text;
-  // } else {
-  //   msg = message;
-  // }
 
   const conversationHistory = await HistoryModel.findById(id);
 
@@ -197,6 +143,11 @@ const chatWithBot = async (req: Request, res: Response) => {
   });
 
   try {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache',
+    });
     const stream = openai.beta.chat.completions.stream({
       model: 'gpt-3.5-turbo',
       messages: history.map((msg) => ({
@@ -212,7 +163,7 @@ const chatWithBot = async (req: Request, res: Response) => {
         const { delta } = choices[0];
         const { content } = delta;
         if (content) {
-          console.log('content', content);
+          process.stdout.write(content || '');
           res.write(`data: ${JSON.stringify(content)}\n\n`);
         }
       }
@@ -230,12 +181,6 @@ const chatWithBot = async (req: Request, res: Response) => {
       .content;
 
     if (botMessage) {
-      /* The code below is commented out because of ip address problem */
-      // const { text } = await translate(botMessage, {
-      //   to: 'am',
-      //   fetchOptions: { agent },
-      // });
-
       conversationHistory.history.push({
         sender: 'user',
         message: message,
@@ -245,12 +190,6 @@ const chatWithBot = async (req: Request, res: Response) => {
         sender: 'bot',
         message: botMessage,
       });
-
-      /* The code below is commented out because of ip address problem */
-
-      // if (language !== 'en') {
-      //   conversationHistory.history[0].translatedMessage = text;
-      // }
 
       await conversationHistory.save();
     }
