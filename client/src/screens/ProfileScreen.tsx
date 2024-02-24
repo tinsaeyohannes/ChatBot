@@ -1,10 +1,24 @@
-import React from 'react';
-import {StyleSheet, Text} from 'react-native';
+import React, {type FC} from 'react';
+import {StatusBar, StyleSheet, Text} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {userStore} from '../store/useStore';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {ParamListBase} from '@react-navigation/native';
 
-const ProfileScreen = (): React.JSX.Element => {
+type ProfileScreenProps = {
+  navigation: NativeStackNavigationProp<ParamListBase>;
+};
+const ProfileScreen: FC<ProfileScreenProps> = ({}): React.JSX.Element => {
+  const {isDarkMode} = userStore(state => ({
+    isDarkMode: state.isDarkMode,
+  }));
   return (
-    <SafeAreaView style={styles.safeAreaViewContainer}>
+    <SafeAreaView
+      style={[
+        styles.safeAreaViewContainer,
+        isDarkMode ? styles.darkBg : styles.lightBg,
+      ]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <Text>ProfileScreen</Text>
     </SafeAreaView>
   );
@@ -13,9 +27,15 @@ const ProfileScreen = (): React.JSX.Element => {
 const styles = StyleSheet.create({
   safeAreaViewContainer: {
     flex: 1,
-    backgroundColor: '#101010',
+
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  darkBg: {
+    backgroundColor: '#031C1A',
+  },
+  lightBg: {
+    backgroundColor: '#E5E5E5',
   },
 });
 
