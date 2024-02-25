@@ -33,8 +33,13 @@ function App() {
   }, [isDark, isDarkMode, setIsDarkMode]);
 
   React.useEffect(() => {
-    SystemNavigationBar.setNavigationColor(isDark ? '#101010' : '#E5E5E5');
-    SystemNavigationBar.setNavigationBarContrastEnforced(true);
+    const changeSystemNavColor = async () => {
+      await SystemNavigationBar.setNavigationColor(
+        isDark ? '#101010' : '#E5E5E5',
+      );
+      await SystemNavigationBar.setNavigationBarContrastEnforced(true);
+    };
+    changeSystemNavColor();
   }, [isDark]);
 
   return (
