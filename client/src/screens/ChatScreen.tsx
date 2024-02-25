@@ -1,4 +1,4 @@
-import React, {useEffect, useState, type FC} from 'react';
+import React, {useCallback, useEffect, useState, type FC} from 'react';
 import {
   Image,
   ScrollView,
@@ -20,12 +20,32 @@ import {
 import type {ParamListBase} from '@react-navigation/native';
 import type {DrawerNavigationProp} from '@react-navigation/drawer';
 import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
-import {useChatStore} from '../store/useChatStore';
+// import {useChatStore} from '../store/useChatStore';
+import EventSource, {
+  type ErrorEvent,
+  type EventSourceListener,
+  type ExceptionEvent,
+  type MessageEvent,
+  type OpenEvent,
+  type TimeoutEvent,
+} from 'react-native-sse';
+import {SERVER_API_KEY, BASE_URL} from '@env';
+import 'react-native-url-polyfill/auto';
 
 type ChatScreenProps = {
   navigation: DrawerNavigationProp<ParamListBase>;
   route: any;
 };
+
+interface ExtendedEventSource extends EventSource {
+  onmessage?: (event: MessageEvent) => void;
+  onerror?: (error: Event) => void;
+}
+interface Message {
+  _id: number;
+  text: string;
+  createdAt: Date;
+}
 
 const ChatScreen: FC<ChatScreenProps> = ({
   navigation,
@@ -35,20 +55,185 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-  const {newChat} = useChatStore(state => ({
-    newChat: state.newChat,
-  }));
+  // const {newChat} = useChatStore(state => ({
+  //   newChat: state.newChat,
+  // }));
 
   const [userMessage, setUserMessage] = useState({
     sender: 'user',
     message: '',
   });
-
+  const [botResponse, setBotResponse] = useState<string>('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
   }, [isDarkMode]);
 
-  console.log('chat', chat);
+  // useEffect(() => {
+  //   const url = new URL(`${BASE_URL}/stream`);
+
+  //   const es = new EventSource(url, {
+  //     headers: {
+  //       Authorization: {
+  //         toString: function () {
+  //           return 'Bearer ' + SERVER_API_KEY;
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   const listener: EventSourceListener = event => {
+  //     if (event.type === 'open') {
+  //       console.log('Open SSE connection.');
+  //     } else if (event.type === 'message') {
+  //       const data = JSON.parse(event.data);
+  //       // Check for the "Stream ended" signal
+
+  //       es.close(); // Close the connection to the server
+  //       console.log('data', data);
+  //     } else if (event.type === 'error') {
+  //       console.error('Connection error:', event.message);
+  //       es.close();
+  //     } else if (event.type === 'exception') {
+  //       console.error('Error:', event.message, event.error);
+  //     }
+  //   };
+
+  //   es.addEventListener('open', listener);
+  //   es.addEventListener('message', listener);
+  //   es.addEventListener('error', listener);
+
+  //   return () => {
+  //     es.removeAllEventListeners();
+  //     es.close();
+  //   };
+  // }, []);
+
+  const newChat = useCallback(() => {
+    let newContent = '';
+    const eventSource: ExtendedEventSource = new EventSource(
+      `${BASE_URL}/new`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SERVER_API_KEY}`,
+          connection: 'keep-alive',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          message: userMessage.message,
+        }),
+      },
+    );
+    const message: Message = {
+      _id: new Date().getTime(),
+      text: ' >',
+      createdAt: new Date(),
+    };
+
+    const openListener = (event: OpenEvent) => {
+      if (event.type === 'open') {
+        console.log('Open SSE connection.');
+        setLoading(false);
+      } else {
+        console.log('error while opening SSE connection.');
+      }
+    };
+
+    const messageListener = (event: MessageEvent) => {
+      if (event.data && event.data !== '[DONE]') {
+        const newWord = JSON.parse(event.data);
+        newContent = newContent + newWord;
+        // console.log(newContent);
+        setBotResponse(newContent);
+        setMessages(previousMessages => {
+          const last = [...previousMessages];
+          const newList = last.map(m => {
+            if (m._id === message._id) {
+              m.text = newContent;
+              return m;
+            }
+            return m;
+          });
+          return newList;
+        });
+      } else {
+        setLoading(false);
+        eventSource.close();
+      }
+    };
+
+    const errorListener = (
+      event: ErrorEvent | TimeoutEvent | ExceptionEvent,
+    ) => {
+      if ('data' in event) {
+        console.error('Connection error:', event.data);
+      } else if (event.type === 'error') {
+        console.error('Connection error:', event.message);
+      }
+      setLoading(false);
+      eventSource.close();
+    };
+    console.log('eventSource', eventSource);
+
+    eventSource.addEventListener('open', openListener);
+    eventSource.addEventListener('message', messageListener);
+    eventSource.addEventListener('error', errorListener);
+
+    return () => {
+      eventSource.removeAllEventListeners();
+      eventSource.close();
+    };
+  }, [userMessage.message]);
+
+  const fetchStreamMessage = async () => {
+    const url = `${BASE_URL}/new`; // Adjust the URL as needed
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SERVER_API_KEY}`,
+        },
+        body: JSON.stringify({
+          message: userMessage.message,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to start streaming');
+        return;
+      }
+
+      const reader = response.body.getReader();
+      let chunks = '';
+      reader.read().then(function process({done, value}) {
+        if (done) {
+          console.log('Stream complete');
+          return;
+        }
+
+        chunks += new TextDecoder('utf-8').decode(value);
+        const words = chunks.split(' ');
+        if (words.length > 1) {
+          // Remove the last word from chunks
+          chunks = words.slice(0, -1).join(' ') + ' ';
+          // Update the UI with the last word
+          setBotResponse(words[words.length - 1]);
+        }
+
+        // Continue reading the stream
+        return reader.read().then(process);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    console.log('messages', messages);
+  }, [messages]);
   return (
     <SafeAreaView
       style={[
@@ -80,7 +265,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
             />
           </TouchableOpacity>
         </View>
-
+        <Text style={styles.message}>AI: {botResponse}</Text>
         <ScrollView>
           {chat?.history.map(message => (
             <View style={styles.messageContainer} key={message._id}>
@@ -118,7 +303,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
             <TouchableOpacity
               style={styles.headerButton}
               onPress={() => {
-                newChat(userMessage, chat?._id);
+                // newChat(userMessage, chat?._id);
+                newChat();
+                // fetchStreamMessage();
               }}>
               <Feather
                 name="send"
