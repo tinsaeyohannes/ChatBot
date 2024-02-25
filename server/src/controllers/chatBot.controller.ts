@@ -27,7 +27,6 @@ const addChatName = async (userMessage: string, botMessage: string) => {
     }
     const chatName = (await titleStream.finalChatCompletion()).choices[0]
       .message.content;
-    console.log('chatName from addChatName', chatName);
     return chatName;
   } catch (error) {
     console.error(error);
@@ -73,8 +72,17 @@ const newChat = async (req: Request, res: Response) => {
       }
 
       res.write('data: [DONE]\n\n');
-    } catch (streamError) {
+    } catch (streamError: any) {
       console.error('Stream error:', streamError);
+      if (
+        streamError.code === 'EAI_AGAIN' ||
+        streamError.code === 'ECONNRESET' ||
+        streamError.code === 'ETIMEDOUT'
+      ) {
+        return res.status(503).json({
+          message: 'Service temporarily unavailable. Please try again later.',
+        });
+      }
       res.status(500).json({
         message: 'An error occurred while streaming chat completions.',
       });
@@ -106,11 +114,14 @@ const newChat = async (req: Request, res: Response) => {
 
       await newChat.save();
     }
+
+    res.end();
   } catch (error) {
     console.error((error as Error).message);
     res.status(500).json({
       message: (error as Error).message,
     });
+    return;
   }
 };
 
@@ -221,6 +232,12 @@ const getAllChatHistory = async (req: Request, res: Response) => {
 
 const getChatById = async (req: Request, res: Response) => {
   const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({
+      message: 'Please enter an chat id',
+    });
+  }
   console.log('id', id);
   try {
     const chat = await HistoryModel.findById(id);
