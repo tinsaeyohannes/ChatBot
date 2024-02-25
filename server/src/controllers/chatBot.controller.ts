@@ -77,7 +77,8 @@ const newChat = async (req: Request, res: Response) => {
       if (
         streamError.code === 'EAI_AGAIN' ||
         streamError.code === 'ECONNRESET' ||
-        streamError.code === 'ETIMEDOUT'
+        streamError.code === 'ETIMEDOUT' ||
+        streamError.code === 'rate_limit_exceeded'
       ) {
         return res.status(503).json({
           message: 'Service temporarily unavailable. Please try again later.',
