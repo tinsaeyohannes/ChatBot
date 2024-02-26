@@ -34,16 +34,16 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     conversationHistory: state.conversationHistory,
   }));
 
-  useEffect(() => {
-    console.log('conversationHistory useEffect', conversationHistory);
-    console.log(
-      'history useEffect',
-      conversationHistory.map(item => item.history),
-    );
-  }, [conversationHistory]);
+  // useEffect(() => {
+  //   console.log('conversationHistory useEffect', conversationHistory);
+  //   console.log(
+  //     'history useEffect',
+  //     conversationHistory.map(item => item.history),
+  //   );
+  // }, [conversationHistory]);
 
   const truncateString = (str: string) => {
-    if (str.length > 34) {
+    if (str?.length > 34) {
       return str.slice(0, 30) + '...';
     } else {
       return str;
