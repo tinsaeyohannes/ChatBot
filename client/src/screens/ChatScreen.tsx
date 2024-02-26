@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState, type FC} from 'react';
+import React, {useEffect, useState, type FC} from 'react';
 import {
   Image,
   ScrollView,
@@ -20,30 +20,13 @@ import {
 import type {ParamListBase} from '@react-navigation/native';
 import type {DrawerNavigationProp} from '@react-navigation/drawer';
 import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
-// import {useChatStore} from '../store/useChatStore';
-import EventSource, {
-  type CloseEvent,
-  type ErrorEvent,
-  type ExceptionEvent,
-  type MessageEvent,
-  type OpenEvent,
-  type TimeoutEvent,
-} from 'react-native-sse';
-import {SERVER_API_KEY, BASE_URL} from '@env';
+import {useChatStore} from '../store/useChatStore';
 import 'react-native-url-polyfill/auto';
 
 type ChatScreenProps = {
   navigation: DrawerNavigationProp<ParamListBase>;
   route: any;
 };
-
-interface ExtendedEventSource extends EventSource {
-  onmessage?: (event: MessageEvent) => void;
-  onopen?: (event: OpenEvent) => void;
-  onclose?: (event: CloseEvent) => void;
-  ontimeout?: (event: TimeoutEvent) => void;
-  onerror?: (error: Event) => void;
-}
 
 const ChatScreen: FC<ChatScreenProps> = ({
   navigation,
@@ -53,83 +36,20 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-
+  const {newChat} = useChatStore(state => ({
+    newChat: state.newChat,
+  }));
   const [userMessage, setUserMessage] = useState({
     sender: 'user',
     message: 'hi',
   });
-  const [botResponse, setBotResponse] = useState<string>('');
+  // const [botResponse, setBotResponse] = useState<string>('');
   const [messages, setMessages] = useState('');
   const [loading, setLoading] = useState(false);
-
+  console.log('loading', loading);
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
   }, [isDarkMode]);
-
-  const newChat = useCallback(() => {
-    setLoading(true);
-
-    let newContent = '';
-    const eventSource: ExtendedEventSource = new EventSource(
-      `${BASE_URL}/new`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${SERVER_API_KEY}`,
-          connection: 'keep-alive',
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          message: userMessage.message,
-        }),
-        pollingInterval: 25000,
-      },
-    );
-
-    const openListener = (event: OpenEvent) => {
-      if (event.type === 'open') {
-        console.log('Open SSE connection.');
-        setLoading(false);
-      } else {
-        console.log('error while opening SSE connection.');
-      }
-    };
-
-    const messageListener = (event: MessageEvent) => {
-      if (event.data && event.data !== '[DONE]') {
-        const newWord = JSON.parse(event.data);
-        newContent = newContent + newWord;
-        // console.log(newContent);
-        setBotResponse(newContent);
-
-        setMessages((prev: string) => prev + newWord);
-      } else {
-        setLoading(false);
-        eventSource.close();
-      }
-    };
-
-    const errorListener = (
-      event: ErrorEvent | TimeoutEvent | ExceptionEvent,
-    ) => {
-      if ('data' in event) {
-        console.error('Connection error:', event.data);
-      } else if (event.type === 'error') {
-        console.error('Connection error:', event.message);
-      }
-      setLoading(false);
-      eventSource.close();
-    };
-
-    eventSource.addEventListener('open', openListener);
-    eventSource.addEventListener('message', messageListener);
-    eventSource.addEventListener('error', errorListener);
-
-    return () => {
-      eventSource.removeAllEventListeners();
-      eventSource.close();
-    };
-  }, [userMessage.message]);
 
   useEffect(() => {
     console.log('messages', messages);
@@ -166,11 +86,11 @@ const ChatScreen: FC<ChatScreenProps> = ({
           </TouchableOpacity>
         </View>
         <Text style={styles.message}>{messages}</Text>
-        {loading ? (
+        {/* {loading ? (
           <Text>Loading...</Text>
         ) : (
           <Text style={styles.message}>AI: {botResponse}</Text>
-        )}
+        )} */}
 
         <ScrollView>
           {chat?.history.map(message => (
@@ -210,7 +130,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
               style={styles.headerButton}
               onPress={() => {
                 // newChat(userMessage, chat?._id);
-                newChat();
+                newChat(userMessage, setMessages, setLoading);
                 // fetchStreamMessage();
               }}>
               <Feather
