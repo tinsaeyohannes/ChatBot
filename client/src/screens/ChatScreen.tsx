@@ -22,8 +22,8 @@ import type {DrawerNavigationProp} from '@react-navigation/drawer';
 import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
 // import {useChatStore} from '../store/useChatStore';
 import EventSource, {
+  type CloseEvent,
   type ErrorEvent,
-  type EventSourceListener,
   type ExceptionEvent,
   type MessageEvent,
   type OpenEvent,
@@ -39,12 +39,10 @@ type ChatScreenProps = {
 
 interface ExtendedEventSource extends EventSource {
   onmessage?: (event: MessageEvent) => void;
+  onopen?: (event: OpenEvent) => void;
+  onclose?: (event: CloseEvent) => void;
+  ontimeout?: (event: TimeoutEvent) => void;
   onerror?: (error: Event) => void;
-}
-interface Message {
-  _id: number;
-  text: string;
-  createdAt: Date;
 }
 
 const ChatScreen: FC<ChatScreenProps> = ({
@@ -55,62 +53,22 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-  // const {newChat} = useChatStore(state => ({
-  //   newChat: state.newChat,
-  // }));
 
   const [userMessage, setUserMessage] = useState({
     sender: 'user',
-    message: '',
+    message: 'hi',
   });
   const [botResponse, setBotResponse] = useState<string>('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState('');
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
   }, [isDarkMode]);
 
-  // useEffect(() => {
-  //   const url = new URL(`${BASE_URL}/stream`);
-
-  //   const es = new EventSource(url, {
-  //     headers: {
-  //       Authorization: {
-  //         toString: function () {
-  //           return 'Bearer ' + SERVER_API_KEY;
-  //         },
-  //       },
-  //     },
-  //   });
-
-  //   const listener: EventSourceListener = event => {
-  //     if (event.type === 'open') {
-  //       console.log('Open SSE connection.');
-  //     } else if (event.type === 'message') {
-  //       const data = JSON.parse(event.data);
-  //       // Check for the "Stream ended" signal
-
-  //       es.close(); // Close the connection to the server
-  //       console.log('data', data);
-  //     } else if (event.type === 'error') {
-  //       console.error('Connection error:', event.message);
-  //       es.close();
-  //     } else if (event.type === 'exception') {
-  //       console.error('Error:', event.message, event.error);
-  //     }
-  //   };
-
-  //   es.addEventListener('open', listener);
-  //   es.addEventListener('message', listener);
-  //   es.addEventListener('error', listener);
-
-  //   return () => {
-  //     es.removeAllEventListeners();
-  //     es.close();
-  //   };
-  // }, []);
-
   const newChat = useCallback(() => {
+    setLoading(true);
+
     let newContent = '';
     const eventSource: ExtendedEventSource = new EventSource(
       `${BASE_URL}/new`,
@@ -124,13 +82,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
         body: JSON.stringify({
           message: userMessage.message,
         }),
+        pollingInterval: 25000,
       },
     );
-    const message: Message = {
-      _id: new Date().getTime(),
-      text: ' >',
-      createdAt: new Date(),
-    };
 
     const openListener = (event: OpenEvent) => {
       if (event.type === 'open') {
@@ -147,17 +101,8 @@ const ChatScreen: FC<ChatScreenProps> = ({
         newContent = newContent + newWord;
         // console.log(newContent);
         setBotResponse(newContent);
-        setMessages(previousMessages => {
-          const last = [...previousMessages];
-          const newList = last.map(m => {
-            if (m._id === message._id) {
-              m.text = newContent;
-              return m;
-            }
-            return m;
-          });
-          return newList;
-        });
+
+        setMessages((prev: string) => prev + newWord);
       } else {
         setLoading(false);
         eventSource.close();
@@ -175,7 +120,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
       setLoading(false);
       eventSource.close();
     };
-    console.log('eventSource', eventSource);
 
     eventSource.addEventListener('open', openListener);
     eventSource.addEventListener('message', messageListener);
@@ -186,50 +130,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
       eventSource.close();
     };
   }, [userMessage.message]);
-
-  const fetchStreamMessage = async () => {
-    const url = `${BASE_URL}/new`; // Adjust the URL as needed
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${SERVER_API_KEY}`,
-        },
-        body: JSON.stringify({
-          message: userMessage.message,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to start streaming');
-        return;
-      }
-
-      const reader = response.body.getReader();
-      let chunks = '';
-      reader.read().then(function process({done, value}) {
-        if (done) {
-          console.log('Stream complete');
-          return;
-        }
-
-        chunks += new TextDecoder('utf-8').decode(value);
-        const words = chunks.split(' ');
-        if (words.length > 1) {
-          // Remove the last word from chunks
-          chunks = words.slice(0, -1).join(' ') + ' ';
-          // Update the UI with the last word
-          setBotResponse(words[words.length - 1]);
-        }
-
-        // Continue reading the stream
-        return reader.read().then(process);
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   useEffect(() => {
     console.log('messages', messages);
@@ -265,7 +165,13 @@ const ChatScreen: FC<ChatScreenProps> = ({
             />
           </TouchableOpacity>
         </View>
-        <Text style={styles.message}>AI: {botResponse}</Text>
+        <Text style={styles.message}>{messages}</Text>
+        {loading ? (
+          <Text>Loading...</Text>
+        ) : (
+          <Text style={styles.message}>AI: {botResponse}</Text>
+        )}
+
         <ScrollView>
           {chat?.history.map(message => (
             <View style={styles.messageContainer} key={message._id}>
