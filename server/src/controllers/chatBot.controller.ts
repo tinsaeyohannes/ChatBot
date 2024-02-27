@@ -123,7 +123,7 @@ const newChat = asyncHandler(async (req: Request, res: Response) => {
 
       await newChat.save();
     }
-    res.end();
+    res.end(); // TODO there is a bug here
   } catch (error) {
     console.error((error as Error).message);
     if (error instanceof APIConnectionError) {
@@ -243,6 +243,7 @@ const chatWithBot = asyncHandler(async (req: Request, res: Response) => {
 
       await conversationHistory.save();
     }
+    res.end(); // TODO there is a bug here
   } catch (error) {
     console.error((error as Error).message);
     res.status(500).json({
@@ -369,5 +370,4 @@ export {
   getChatById,
   deleteChat,
   deleteMessage,
-  chatgpt,
 };
