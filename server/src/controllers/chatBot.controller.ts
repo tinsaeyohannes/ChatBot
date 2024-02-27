@@ -1,6 +1,13 @@
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
 import HistoryModel from '../models/ConversationHistory.mongo';
+import asyncHandler from 'express-async-handler';
+import {
+  APIConnectionError,
+  APIConnectionTimeoutError,
+  APIError,
+  RateLimitError,
+} from 'openai/error';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -33,13 +40,13 @@ const addChatName = async (userMessage: string, botMessage: string) => {
   }
 };
 
-const newChat = async (req: Request, res: Response) => {
+const newChat = asyncHandler(async (req: Request, res: Response) => {
   const { message }: { message: string; language: string } = req.body;
 
   console.log('message', message);
-
   if (!message) {
-    return res.status(400).json('Please enter a message');
+    res.status(400).json('Please enter a message');
+    return;
   }
 
   try {
@@ -66,7 +73,7 @@ const newChat = async (req: Request, res: Response) => {
         const { delta } = choices[0];
         const { content } = delta;
         if (content) {
-          console.log('content', content);
+          process.stdout.write(content || '');
           res.write(`data: ${JSON.stringify(content)}\n\n`);
         }
       }
@@ -80,9 +87,10 @@ const newChat = async (req: Request, res: Response) => {
         streamError.code === 'ETIMEDOUT' ||
         streamError.code === 'rate_limit_exceeded'
       ) {
-        return res.status(503).json({
+        res.status(503).json({
           message: 'Service temporarily unavailable. Please try again later.',
         });
+        return;
       }
       res.status(500).json({
         message: 'An error occurred while streaming chat completions.',
@@ -96,7 +104,7 @@ const newChat = async (req: Request, res: Response) => {
     if (botMessage) {
       const chatName = await addChatName(message, botMessage);
 
-      console.log('chatName from newChat', chatName);
+      // console.log('chatName from newChat', chatName);
 
       const newChat = new HistoryModel({
         chatName: chatName,
@@ -115,33 +123,63 @@ const newChat = async (req: Request, res: Response) => {
 
       await newChat.save();
     }
-
     res.end();
   } catch (error) {
     console.error((error as Error).message);
+    if (error instanceof APIConnectionError) {
+      console.error('Connection error. Please try again later.');
+      res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again later.',
+      });
+      return;
+    }
+    if (error instanceof APIConnectionTimeoutError) {
+      console.error('Connection error. Please try again later.');
+      res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again later.',
+      });
+      return;
+    }
+    if (error instanceof APIError) {
+      console.error('Connection error. Please try again later.');
+      res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again later.',
+      });
+      return;
+    }
+    if (error instanceof RateLimitError) {
+      console.error('Rate limit exceeded. Please try again later.');
+      res.status(429).json({
+        message: 'Rate limit exceeded. Please try again later.',
+      });
+      return;
+    }
     res.status(500).json({
       message: (error as Error).message,
     });
     return;
   }
-};
+});
 
-const chatWithBot = async (req: Request, res: Response) => {
+const chatWithBot = asyncHandler(async (req: Request, res: Response) => {
   const { message, id }: { message: string; id: string } = req.body;
 
   console.log('message', message);
 
   if (!id) {
-    return res.status(400).json('Please enter an chat id');
+    res.status(400).json('Please enter an chat id');
+    return;
   }
   if (!message) {
-    return res.status(400).json('Please enter a message');
+    res.status(400).json('Please enter a message');
+    return;
   }
 
   const conversationHistory = await HistoryModel.findById(id);
 
   if (!conversationHistory) {
-    return res.status(404).json('Empty History!');
+    res.status(404).json('Empty History!');
+    return;
   }
 
   const history = conversationHistory.history.map((doc) => ({
@@ -211,15 +249,16 @@ const chatWithBot = async (req: Request, res: Response) => {
       message: (error as Error).message,
     });
   }
-};
+});
 
-const getAllChatHistory = async (req: Request, res: Response) => {
+const getAllChatHistory = asyncHandler(async (req: Request, res: Response) => {
   try {
     const allChats = await HistoryModel.find();
     if (!allChats) {
-      return res.status(404).json({
+      res.status(404).json({
         message: 'No chats found',
       });
+      return;
     } else {
       res.status(200).json(allChats);
     }
@@ -229,24 +268,26 @@ const getAllChatHistory = async (req: Request, res: Response) => {
       message: (error as Error).message,
     });
   }
-};
+});
 
-const getChatById = async (req: Request, res: Response) => {
+const getChatById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   if (!id) {
-    return res.status(400).json({
+    res.status(400).json({
       message: 'Please enter an chat id',
     });
+    return;
   }
   console.log('id', id);
   try {
     const chat = await HistoryModel.findById(id);
 
     if (!chat) {
-      return res.status(404).json({
+      res.status(404).json({
         message: 'Chat not found',
       });
+      return;
     } else {
       res.status(200).json(chat);
     }
@@ -256,21 +297,23 @@ const getChatById = async (req: Request, res: Response) => {
       message: (error as Error).message,
     });
   }
-};
+});
 
-const deleteChat = async (req: Request, res: Response) => {
+const deleteChat = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     if (!id) {
-      return res.status(400).json({ error: 'Please enter an chat id' });
+      res.status(400).json({ error: 'Please enter an chat id' });
+      return;
     }
 
     const chat = await HistoryModel.findByIdAndDelete(id);
 
     if (!chat) {
-      return res.status(404).json({
+      res.status(404).json({
         message: 'Chat not found',
       });
+      return;
     } else {
       res.status(200).json({
         message: 'Chat deleted successfully',
@@ -282,20 +325,22 @@ const deleteChat = async (req: Request, res: Response) => {
       message: (error as Error).message,
     });
   }
-};
-const deleteMessage = async (req: Request, res: Response) => {
+});
+const deleteMessage = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     if (!id) {
-      return res.status(400).json({ error: 'Please enter message id' });
+      res.status(400).json({ error: 'Please enter message id' });
+      return;
     }
 
     const chat = await HistoryModel.findById(id);
 
     if (!chat) {
-      return res.status(404).json({
+      res.status(404).json({
         message: 'Chat not found',
       });
+      return;
     }
 
     const index = chat.history.findIndex(
@@ -315,7 +360,7 @@ const deleteMessage = async (req: Request, res: Response) => {
       message: (error as Error).message,
     });
   }
-};
+});
 
 export {
   chatWithBot,
@@ -324,4 +369,5 @@ export {
   getChatById,
   deleteChat,
   deleteMessage,
+  chatgpt,
 };
