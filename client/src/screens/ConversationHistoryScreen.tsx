@@ -34,13 +34,13 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     conversationHistory: state.conversationHistory,
   }));
 
-  // useEffect(() => {
-  //   console.log('conversationHistory useEffect', conversationHistory);
-  //   console.log(
-  //     'history useEffect',
-  //     conversationHistory.map(item => item.history),
-  //   );
-  // }, [conversationHistory]);
+  useEffect(() => {
+    console.log('conversationHistory useEffect', conversationHistory);
+    console.log(
+      'history useEffect',
+      conversationHistory.map(item => item.history),
+    );
+  }, [conversationHistory]);
 
   const truncateString = (str: string) => {
     if (str?.length > 34) {
@@ -51,7 +51,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
   };
 
   const formatDate = (date: Date) => {
-    return formatDistanceToNow(date, {addSuffix: true});
+    return formatDistanceToNow(date, {addSuffix: false});
   };
 
   return (
@@ -87,7 +87,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                 {truncateString(item?.chatName)}
               </Text>
               <Text style={[styles.dateText]}>
-                {formatDate(item.createdAt)}
+                {formatDate(item.createdAt)} ago
               </Text>
             </View>
           </TouchableOpacity>
