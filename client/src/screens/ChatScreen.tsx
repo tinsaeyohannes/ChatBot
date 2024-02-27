@@ -19,13 +19,14 @@ import {
 } from 'react-native-responsive-screen';
 import type {ParamListBase} from '@react-navigation/native';
 import type {DrawerNavigationProp} from '@react-navigation/drawer';
-import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
+import type {
+  ChatConversationTypes,
+  ChatHistoryTypes,
+} from '../types/useChatStoreTypes';
 import {useChatStore} from '../store/useChatStore';
 import 'react-native-url-polyfill/auto';
-import type {EventSourceListener} from 'react-native-sse';
-// import EventSource from 'react-native-sse';
-import {SERVER_API_KEY, BASE_URL} from '@env';
-import RNEventSource from 'react-native-event-source';
+// import {SERVER_API_KEY, BASE_URL} from '@env';
+// import RNEventSource from 'react-native-event-source';
 
 type ChatScreenProps = {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -40,17 +41,20 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-  const {newChat} = useChatStore(state => ({
+  const {newChat, userChat, continueChat} = useChatStore(state => ({
     newChat: state.newChat,
+    userChat: state.userChat,
+    continueChat: state.continueChat,
   }));
-  const [userMessage, setUserMessage] = useState({
+  const [userMessage, setUserMessage] = useState<ChatConversationTypes>({
+    _id: new Date().toString(),
     sender: 'user',
     message: 'hi',
   });
   // const [botResponse, setBotResponse] = useState<string>('');
   const [messages, setMessages] = useState('');
   const [loading, setLoading] = useState(false);
-  const [value, setValue] = useState('');
+
   console.log('loading', loading);
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
@@ -60,47 +64,55 @@ const ChatScreen: FC<ChatScreenProps> = ({
     console.log('messages', messages);
   }, [messages]);
 
-  useEffect(() => {
-    const url = new URL(`${BASE_URL}/stream`);
+  const toggleChat = () => {
+    userChat.length === 0
+      ? newChat(userMessage, setMessages, setLoading, chat?._id)
+      : continueChat(userMessage, setMessages, setLoading, chat?._id);
+  };
 
-    const es = new RNEventSource(`${BASE_URL}/stream`, {
-      headers: {
-        Authorization: {
-          toString: function () {
-            return 'Bearer ' + SERVER_API_KEY;
-          },
-        },
-      },
-    });
+  console.log('userUser', userChat);
 
-    const listener = event => {
-      if (event.type === 'open') {
-        console.log('Open SSE connection.');
-      } else if (event.type === 'message') {
-        if (event.data && event.data !== '[DONE]') {
-          const data = JSON.parse(event.data);
-          console.log('data', data);
-          setValue(prev => prev + data);
-        } else {
-          es.close(); // Close the connection to the server
-        }
-      } else if (event.type === 'error') {
-        console.error('Connection error:', event.message);
-        es.close();
-      } else if (event.type === 'exception') {
-        console.error('Error:', event.message, event.error);
-      }
-    };
+  // useEffect(() => {
+  //   const url = new URL(`${BASE_URL}/stream`);
 
-    es.addEventListener('open', listener);
-    es.addEventListener('message', listener);
-    es.addEventListener('error', listener);
+  //   const es = new RNEventSource(`${BASE_URL}/stream`, {
+  //     headers: {
+  //       Authorization: {
+  //         toString: function () {
+  //           return 'Bearer ' + SERVER_API_KEY;
+  //         },
+  //       },
+  //     },
+  //   });
 
-    return () => {
-      es.removeAllListeners();
-      es.close();
-    };
-  }, []);
+  //   const listener = event => {
+  //     if (event.type === 'open') {
+  //       console.log('Open SSE connection.');
+  //     } else if (event.type === 'message') {
+  //       if (event.data && event.data !== '[DONE]') {
+  //         const data = JSON.parse(event.data);
+  //         console.log('data', data);
+  //         setValue(prev => prev + data);
+  //       } else {
+  //         es.close(); // Close the connection to the server
+  //       }
+  //     } else if (event.type === 'error') {
+  //       console.error('Connection error:', event.message);
+  //       es.close();
+  //     } else if (event.type === 'exception') {
+  //       console.error('Error:', event.message, event.error);
+  //     }
+  //   };
+
+  //   es.addEventListener('open', listener);
+  //   es.addEventListener('message', listener);
+  //   es.addEventListener('error', listener);
+
+  //   return () => {
+  //     es.removeAllListeners();
+  //     es.close();
+  //   };
+  // }, []);
   return (
     <SafeAreaView
       style={[
@@ -132,37 +144,53 @@ const ChatScreen: FC<ChatScreenProps> = ({
             />
           </TouchableOpacity>
         </View>
-        <Text style={styles.message}>{messages}</Text>
-        <Text>Count {value}</Text>
-        {/* {loading ? (
-          <Text>Loading...</Text>
-        ) : (
-          <Text style={styles.message}>AI: {botResponse}</Text>
-        )} */}
 
         <ScrollView>
-          {chat?.history.map(message => (
-            <View style={styles.messageContainer} key={message._id}>
-              <View style={styles.senderPicContainer}>
-                <Image
-                  source={
-                    message.sender === 'user'
-                      ? {
-                          uri: 'https://i.pravatar.cc/300',
-                        }
-                      : require('../assets/icons/ai.png')
-                  }
-                  style={styles.senderPic}
-                />
-              </View>
-              <View>
-                <Text style={styles.senderName}>
-                  {message.sender === 'user' ? 'You' : 'AI'}
-                </Text>
-                <Text style={styles.message}>{message.message}</Text>
-              </View>
-            </View>
-          ))}
+          {chat
+            ? chat?.history.map(message => (
+                <View style={styles.messageContainer} key={message._id}>
+                  <View style={styles.senderPicContainer}>
+                    <Image
+                      source={
+                        message.sender === 'user'
+                          ? {
+                              uri: 'https://i.pravatar.cc/300',
+                            }
+                          : require('../assets/icons/ai.png')
+                      }
+                      style={styles.senderPic}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.senderName}>
+                      {message.sender === 'user' ? 'You' : 'AI'}
+                    </Text>
+                    <Text style={styles.message}>{message.message}</Text>
+                  </View>
+                </View>
+              ))
+            : userChat.map(message => (
+                <View style={styles.messageContainer} key={message._id}>
+                  <View style={styles.senderPicContainer}>
+                    <Image
+                      source={
+                        message.sender === 'user'
+                          ? {
+                              uri: 'https://i.pravatar.cc/300',
+                            }
+                          : require('../assets/icons/ai.png')
+                      }
+                      style={styles.senderPic}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.senderName}>
+                      {message.sender === 'user' ? 'You' : 'AI'}
+                    </Text>
+                    <Text style={styles.message}>{message.message}</Text>
+                  </View>
+                </View>
+              ))}
         </ScrollView>
         <View>
           <View style={styles.chatInputContainer}>
@@ -176,11 +204,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
 
             <TouchableOpacity
               style={styles.headerButton}
-              onPress={() => {
-                // newChat(userMessage, chat?._id);
-                newChat(userMessage, setMessages, setLoading);
-                // fetchStreamMessage();
-              }}>
+              onPress={() => toggleChat()}>
               <Feather
                 name="send"
                 size={24}
