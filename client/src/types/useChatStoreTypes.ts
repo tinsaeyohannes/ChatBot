@@ -1,13 +1,21 @@
 export type ChatStoreStateTypes = {
   conversationHistory: ChatHistoryTypes[];
+  userChat: ChatConversationTypes[];
 };
 
 export type ChatStoreActionTypes = {
   newChat: (
-    userMessage: {sender: string; message: string},
-    id?: string,
-  ) => Promise<void>;
-  continueChat: (text: string) => Promise<void>;
+    userMessage: ChatConversationTypes,
+    setMessages: React.Dispatch<React.SetStateAction<string>>,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    id: string,
+  ) => Promise<() => void>;
+  continueChat: (
+    userMessage: ChatConversationTypes,
+    setMessages: React.Dispatch<React.SetStateAction<string>>,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    id: string,
+  ) => Promise<() => void>;
   getChatHistory: () => Promise<void>;
   getChatById: (id: string) => Promise<void>;
   deleteChat: (id: string) => Promise<void>;
