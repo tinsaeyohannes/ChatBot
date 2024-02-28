@@ -41,7 +41,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-  const {newChat, userChat, continueChat} = useChatStore(state => ({
+  const {newChat, userChat} = useChatStore(state => ({
     newChat: state.newChat,
     userChat: state.userChat,
     continueChat: state.continueChat,
@@ -52,7 +52,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
     message: 'hi',
   });
   // const [botResponse, setBotResponse] = useState<string>('');
-  const [messages, setMessages] = useState('');
   const [loading, setLoading] = useState(false);
 
   console.log('loading', loading);
@@ -60,19 +59,14 @@ const ChatScreen: FC<ChatScreenProps> = ({
     console.log('isDarkMode', isDarkMode);
   }, [isDarkMode]);
 
-  useEffect(() => {
-    console.log('messages', messages);
-  }, [messages]);
-
-  const toggleChat = () => {
-    userChat.length === 0
-      ? newChat(userMessage, setMessages, setLoading, chat?._id)
-      : continueChat(userMessage, setMessages, setLoading, chat?._id);
-  };
+  // const toggleChat = () => {
+  //   userChat.length === 0
+  //     ? newChat(userMessage, setMessages, setLoading, chat?._id)
+  //     : continueChat(userMessage, setMessages, setLoading, chat?._id);
+  // };
 
   console.log('userUser', userChat);
 
-  // useEffect(() => {
   //   const url = new URL(`${BASE_URL}/stream`);
 
   //   const es = new RNEventSource(`${BASE_URL}/stream`, {
@@ -136,7 +130,11 @@ const ChatScreen: FC<ChatScreenProps> = ({
 
           <Text>{newChat.length === 0 ? 'New Chat' : chat?.chatName}</Text>
 
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => {
+              useChatStore.setState({userChat: []});
+            }}>
             <Feather
               name="plus"
               size={24}
@@ -204,7 +202,10 @@ const ChatScreen: FC<ChatScreenProps> = ({
 
             <TouchableOpacity
               style={styles.headerButton}
-              onPress={() => toggleChat()}>
+              onPress={() => {
+                // toggleChat();
+                newChat(userMessage, setLoading, chat?._id);
+              }}>
               <Feather
                 name="send"
                 size={24}
