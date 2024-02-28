@@ -40,7 +40,7 @@ const addChatName = async (userMessage: string, botMessage: string) => {
   }
 };
 
-const newChat = asyncHandler(async (req: Request, res: Response) => {
+const newChatStream = asyncHandler(async (req: Request, res: Response) => {
   const { message }: { message: string; language: string } = req.body;
 
   console.log('message', message);
@@ -77,6 +77,32 @@ const newChat = asyncHandler(async (req: Request, res: Response) => {
           res.write(`data: ${JSON.stringify(content)}\n\n`);
         }
       }
+      const botMessage = (await stream.finalChatCompletion()).choices[0].message
+        .content;
+
+      if (botMessage) {
+        const chatName = await addChatName(message, botMessage);
+
+        // console.log('chatName from newChat', chatName);
+
+        const newChat = new HistoryModel({
+          chatName: chatName,
+          history: [
+            {
+              sender: 'user',
+              message: message,
+            },
+          ],
+        });
+
+        newChat.history.push({
+          sender: 'bot',
+          message: botMessage,
+        });
+
+        const res = await newChat.save();
+        res.write(`data: ${JSON.stringify(res)}\n\n`);
+      }
 
       res.write('data: [DONE]\n\n');
     } catch (streamError: any) {
@@ -97,14 +123,70 @@ const newChat = asyncHandler(async (req: Request, res: Response) => {
       });
       return;
     }
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    // res.end(); // TODO there is a bug here
+  } catch (error) {
+    console.error((error as Error).message);
+    if (error instanceof APIConnectionError) {
+      console.error('Connection error. Please try again later.');
+      res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again later.',
+      });
+      return;
+    }
+    if (error instanceof APIConnectionTimeoutError) {
+      console.error('Connection error. Please try again later.');
+      res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again later.',
+      });
+      return;
+    }
+    if (error instanceof APIError) {
+      console.error('Connection error. Please try again later.');
+      res.status(503).json({
+        message: 'Service temporarily unavailable. Please try again later.',
+      });
+      return;
+    }
+    if (error instanceof RateLimitError) {
+      console.error('Rate limit exceeded. Please try again later.');
+      res.status(429).json({
+        message: 'Rate limit exceeded. Please try again later.',
+      });
+      return;
+    }
+    res.status(500).json({
+      message: (error as Error).message,
+    });
+    return;
+  }
+});
+const newChat = asyncHandler(async (req: Request, res: Response) => {
+  const { message }: { message: string } = req.body;
+
+  console.log('message', message);
+  if (!message) {
+    res.status(400).json('Please enter a message');
+    return;
+  }
+
+  try {
+    const stream = openai.beta.chat.completions.stream({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: `use expressive emojis also add a bit of some sarcastic tones when answering : ${message}`,
+        },
+      ],
+      stream: true,
+    });
 
     const botMessage = (await stream.finalChatCompletion()).choices[0].message
       .content;
 
     if (botMessage) {
       const chatName = await addChatName(message, botMessage);
-
-      // console.log('chatName from newChat', chatName);
 
       const newChat = new HistoryModel({
         chatName: chatName,
@@ -121,9 +203,10 @@ const newChat = asyncHandler(async (req: Request, res: Response) => {
         message: botMessage,
       });
 
-      await newChat.save();
+      const response = await newChat.save();
+
+      res.status(200).json(response);
     }
-    res.end(); // TODO there is a bug here
   } catch (error) {
     console.error((error as Error).message);
     if (error instanceof APIConnectionError) {
@@ -161,10 +244,102 @@ const newChat = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-const chatWithBot = asyncHandler(async (req: Request, res: Response) => {
+const continueChatStream = asyncHandler(async (req: Request, res: Response) => {
   const { message, id }: { message: string; id: string } = req.body;
 
   console.log('message', message);
+  console.log('id', typeof id);
+
+  if (!id) {
+    res.status(400).json('Please enter an chat id');
+    return;
+  }
+  if (!message) {
+    res.status(400).json('Please enter a message');
+    return;
+  }
+
+  const conversationHistory = await HistoryModel.findById(id);
+
+  if (!conversationHistory) {
+    res.status(404).json('Empty History!');
+    return;
+  }
+
+  const history = conversationHistory.history.map((doc) => ({
+    role: doc.sender,
+    content: doc.message,
+  }));
+
+  history.push({
+    role: 'user',
+    content: message,
+  });
+
+  try {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache',
+    });
+    const stream = openai.beta.chat.completions.stream({
+      model: 'gpt-3.5-turbo',
+      messages: history.map((msg) => ({
+        role: 'user',
+        content: `use the following previous context and use expressive emojis also add a bit of some sarcastic tones when answering :  ${msg.role + msg.content}`,
+      })),
+      stream: true,
+    });
+
+    try {
+      for await (const chunk of stream) {
+        const { choices } = chunk;
+        const { delta } = choices[0];
+        const { content } = delta;
+        if (content) {
+          process.stdout.write(content || '');
+          res.write(`data: ${JSON.stringify(content)}\n\n`);
+        }
+      }
+
+      res.write('data: [DONE]\n\n');
+    } catch (streamError) {
+      console.error('Stream error:', streamError);
+      res.status(500).json({
+        message: 'An error occurred while streaming chat completions.',
+      });
+      return;
+    }
+
+    const botMessage = (await stream.finalChatCompletion()).choices[0].message
+      .content;
+
+    if (botMessage) {
+      conversationHistory.history.push({
+        sender: 'user',
+        message: message,
+      });
+
+      conversationHistory.history.push({
+        sender: 'bot',
+        message: botMessage,
+      });
+
+      await conversationHistory.save();
+    }
+    res.end(); // TODO there is a bug here
+  } catch (error) {
+    console.error((error as Error).message);
+    res.status(500).json({
+      message: (error as Error).message,
+    });
+  }
+});
+const continueChat = asyncHandler(async (req: Request, res: Response) => {
+  const { message, id }: { message: string; id: string } = req.body;
+
+  console.log('message', message);
+  console.log('id', typeof id);
 
   if (!id) {
     res.status(400).json('Please enter an chat id');
@@ -252,9 +427,10 @@ const chatWithBot = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-const getAllChatHistory = asyncHandler(async (req: Request, res: Response) => {
+const getAllChatHistory = async (req: Request, res: Response) => {
   try {
-    const allChats = await HistoryModel.find();
+    const allChats = await HistoryModel.find().sort({ createdAt: -1 }); // Sort by createdAt in descending order
+    // .select('-history'); // Exclude the 'history' field
     if (!allChats) {
       res.status(404).json({
         message: 'No chats found',
@@ -269,7 +445,7 @@ const getAllChatHistory = asyncHandler(async (req: Request, res: Response) => {
       message: (error as Error).message,
     });
   }
-});
+};
 
 const getChatById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -364,8 +540,10 @@ const deleteMessage = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export {
-  chatWithBot,
+  newChatStream,
   newChat,
+  continueChatStream,
+  continueChat,
   getAllChatHistory,
   getChatById,
   deleteChat,
