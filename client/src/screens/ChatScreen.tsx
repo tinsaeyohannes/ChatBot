@@ -134,7 +134,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
             />
           </TouchableOpacity>
 
-          <Text>New Chat</Text>
+          <Text>{newChat.length === 0 ? 'New Chat' : chat?.chatName}</Text>
 
           <TouchableOpacity style={styles.headerButton}>
             <Feather
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 50,
-    backgroundColor: 'red',
+    backgroundColor: '#006570',
   },
   senderPicContainer: {
     justifyContent: 'center',
