@@ -1,18 +1,22 @@
 import express, { Router } from 'express';
 import {
-  chatWithBot,
+  newChatStream,
+  newChat,
+  continueChatStream,
+  continueChat,
   deleteChat,
   getAllChatHistory,
   getChatById,
-  newChat,
   deleteMessage,
 } from '../controllers/chatBot.controller';
 import { generateImages } from '../controllers/imageGenerator.controller';
 
 const BotRouter: Router = express.Router();
 
-BotRouter.post('/chatbot', chatWithBot)
-  .post('/new', newChat)
+BotRouter.post('/chat/continueChat', continueChat)
+  .post('/chat/continueChatStream', continueChatStream)
+  .post('/chat/newChat', newChat)
+  .post('/chat/newChatStream', newChatStream)
   .post('/generateImg', generateImages)
   .get('/all', getAllChatHistory)
   .get('/chat/:id', getChatById)
