@@ -7,6 +7,7 @@ import type {
 } from '../types/useChatStoreTypes';
 import axios from 'axios';
 import {SERVER_API_KEY, BASE_URL} from '@env';
+import uuid from 'react-native-uuid';
 import EventSource, {
   type CloseEvent,
   type ErrorEvent,
@@ -53,7 +54,6 @@ export const useChatStore = create(
             body: JSON.stringify({
               message: userMessage.message,
             }),
-            pollingInterval: 25000,
           },
         );
 
@@ -102,6 +102,16 @@ export const useChatStore = create(
               sender: 'bot',
               message: content,
             });
+
+            conversationHistory.unshift({
+              __v: +uuid.v4(),
+              _id: uuid.v4().toString(),
+              chatName: uuid.v4().toString(),
+              history: userChat,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+
             setLoading(false);
             eventSource.close();
           }
@@ -152,7 +162,6 @@ export const useChatStore = create(
               id: id,
               message: userMessage.message,
             }),
-            pollingInterval: 25000,
           },
         );
 
@@ -187,6 +196,12 @@ export const useChatStore = create(
             content += newWord;
 
             setMessages((prev: string) => prev + newWord);
+          } else {
+            userChat.push({
+              _id: uuid.v4().toString(),
+              sender: 'bot',
+              message: content,
+            });
 
             if (index !== -1) {
               conversationHistory[index].history.push({
@@ -195,12 +210,6 @@ export const useChatStore = create(
                 message: content,
               });
             }
-          } else {
-            userChat.push({
-              _id: new Date().toString(),
-              sender: 'bot',
-              message: content,
-            });
             setLoading(false);
             eventSource.close();
           }
