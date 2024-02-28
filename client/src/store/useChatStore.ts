@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {create} from 'zustand';
 import {createJSONStorage, persist} from 'zustand/middleware';
 import type {
+  ChatHistoryTypes,
   ChatStoreActionTypes,
   ChatStoreStateTypes,
 } from '../types/useChatStoreTypes';
@@ -36,15 +37,21 @@ export const useChatStore = create(
       conversationHistory: [],
       userChat: [],
 
-      newChat: async (userMessage, setMessages, setLoading, id) => {
-        console.log();
+      newChat: async (userMessage, setLoading, id) => {
         const {conversationHistory, userChat} = get();
-        const index = conversationHistory.findIndex(chat => chat._id === id);
 
         setLoading(true);
-        const eventSource: ExtendedEventSource = new EventSource(
-          `${BASE_URL}/new`,
-          {
+        console.log(' userChat.length', userChat.length);
+        const url =
+          userChat.length === 0 ? '/chat/newChat' : '/chat/continueChat';
+        userChat.push({
+          _id: '',
+          sender: 'user',
+          message: userMessage.message,
+        });
+        console.log('url', url);
+        try {
+          const response = await fetch(`${BASE_URL}/${url}`, {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${SERVER_API_KEY}`,
@@ -52,91 +59,43 @@ export const useChatStore = create(
             },
             method: 'POST',
             body: JSON.stringify({
+              id: id,
               message: userMessage.message,
             }),
-          },
-        );
-
-        const openListener = (event: OpenEvent) => {
-          if (event.type === 'open') {
-            console.log('Open SSE connection.');
-            setLoading(false);
-          } else {
-            console.log('error while opening SSE connection.');
-          }
-        };
-
-        userChat.push({
-          _id: userMessage._id,
-          sender: userMessage.sender,
-          message: userMessage.message,
-        });
-
-        if (index !== -1) {
-          conversationHistory[index].history.push({
-            _id: userMessage._id,
-            sender: userMessage.sender,
-            message: userMessage.message,
           });
-        }
 
-        let content = '';
+          const data: ChatHistoryTypes = await response.json();
 
-        const messageListener = (event: MessageEvent) => {
-          if (event.data && event.data !== '[DONE]') {
-            const newWord = JSON.parse(event.data);
-            content += newWord;
+          console.log(
+            'history returned',
+            data.history.map(chat => chat),
+          );
 
-            setMessages((prev: string) => prev + newWord);
-
-            if (index !== -1) {
-              conversationHistory[index].history.push({
-                _id: new Date().toString(),
-                sender: 'bot',
-                message: content,
-              });
-            }
+          console.log('history', data.history);
+          if (userChat.length === 0) {
+            set({
+              conversationHistory: [...conversationHistory, data],
+              userChat: data.history.map(chat => chat),
+            });
           } else {
-            userChat.push({
-              _id: new Date().toString(),
-              sender: 'bot',
-              message: content,
+            const conversationIndex = conversationHistory.findIndex(
+              chat => chat._id === id,
+            );
+
+            conversationHistory[conversationIndex].history = [
+              ...conversationHistory[conversationIndex].history,
+              ...data.history,
+            ];
+
+            set({
+              userChat: data.history,
             });
-
-            conversationHistory.unshift({
-              __v: +uuid.v4(),
-              _id: uuid.v4().toString(),
-              chatName: uuid.v4().toString(),
-              history: userChat,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-
-            setLoading(false);
-            eventSource.close();
           }
-        };
 
-        const errorListener = (
-          event: ErrorEvent | TimeoutEvent | ExceptionEvent,
-        ) => {
-          if ('data' in event) {
-            console.error('Connection error:', event.data);
-          } else if (event.type === 'error') {
-            console.error('Connection error:', event.message);
-          }
           setLoading(false);
-          eventSource.close();
-        };
-
-        eventSource.addEventListener('open', openListener);
-        eventSource.addEventListener('message', messageListener);
-        eventSource.addEventListener('error', errorListener);
-
-        return () => {
-          eventSource.removeAllEventListeners();
-          eventSource.close();
-        };
+        } catch (error) {
+          console.error((error as Error).message);
+        }
       },
       continueChat: async (userMessage, setMessages, setLoading, id) => {
         if (!id) {
