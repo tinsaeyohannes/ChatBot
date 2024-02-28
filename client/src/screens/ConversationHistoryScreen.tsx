@@ -30,8 +30,9 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
 
-  const {conversationHistory} = useChatStore(state => ({
+  const {conversationHistory, userChat} = useChatStore(state => ({
     conversationHistory: state.conversationHistory,
+    userChat: state.userChat,
   }));
 
   useEffect(() => {
@@ -76,6 +77,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
           <TouchableOpacity
             onPress={() => {
               const chat = item;
+              userChat.length === 0;
               navigation.navigate('Chat', {chat});
             }}>
             <View style={styles.listItemContainer}>
