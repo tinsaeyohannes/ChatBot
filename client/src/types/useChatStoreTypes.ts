@@ -6,10 +6,9 @@ export type ChatStoreStateTypes = {
 export type ChatStoreActionTypes = {
   newChat: (
     userMessage: ChatConversationTypes,
-    setMessages: React.Dispatch<React.SetStateAction<string>>,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     id: string,
-  ) => Promise<() => void>;
+  ) => Promise<void>;
   continueChat: (
     userMessage: ChatConversationTypes,
     setMessages: React.Dispatch<React.SetStateAction<string>>,
