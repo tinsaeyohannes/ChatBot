@@ -35,28 +35,35 @@ export const useChatStore = create(
   persist<ChatStoreStateTypes & ChatStoreActionTypes>(
     (set, get) => ({
       conversationHistory: [],
-      userChat: [],
+      userChat: null,
 
-      newChat: async (userMessage, setLoading, id) => {
+      newChat: async (userMessage, setLoading, id, scrollRef) => {
         const {conversationHistory, userChat} = get();
 
-        setLoading(true);
-        console.log(' userChat.length', userChat.length);
-        const url =
-          userChat.length === 0 ? '/chat/newChat' : '/chat/continueChat';
-        userChat.push({
-          _id: '',
-          sender: 'user',
-          message: userMessage.message,
-        });
-        console.log('url', url);
+        scrollRef.current?.scrollToEnd({animated: true});
+        // if (!id) {
+        //   console.log('id not found');
+        //   console.log('userChat', userChat);
+        //   return;
+        // }
+        const url = userChat === null ? 'chat/newChat' : 'chat/continueChat';
         try {
+          userChat?.history.push({
+            _id: new Date().toString(),
+            sender: 'user',
+            message: userMessage.message,
+          });
+
+          setLoading(true);
+          console.log('url', url);
+
           const response = await fetch(`${BASE_URL}/${url}`, {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${SERVER_API_KEY}`,
               connection: 'keep-alive',
             },
+
             method: 'POST',
             body: JSON.stringify({
               id: id,
@@ -66,48 +73,48 @@ export const useChatStore = create(
 
           const data: ChatHistoryTypes = await response.json();
 
-          console.log(
-            'history returned',
-            data.history.map(chat => chat),
-          );
+          console.log('history returned', [...data.history]);
 
           console.log('history', data.history);
-          if (userChat.length === 0) {
+          console.log(data);
+
+          if (!data) {
+            throw new Error('API response is undefined');
+          }
+
+          scrollRef.current?.scrollToEnd({animated: true});
+
+          if (userChat?.history.length === 0) {
+            conversationHistory.unshift(data);
             set({
-              conversationHistory: [...conversationHistory, data],
-              userChat: data.history.map(chat => chat),
+              userChat: data,
             });
           } else {
-            const conversationIndex = conversationHistory.findIndex(
-              chat => chat._id === id,
-            );
-
-            conversationHistory[conversationIndex].history = [
-              ...conversationHistory[conversationIndex].history,
-              ...data.history,
-            ];
-
             set({
-              userChat: data.history,
+              userChat: data,
             });
           }
 
           setLoading(false);
         } catch (error) {
-          console.error((error as Error).message);
+          console.error(error);
         }
       },
+
       continueChat: async (userMessage, setMessages, setLoading, id) => {
         if (!id) {
           return () => {
             console.log('id undefined');
           };
         }
+
         console.log('id', id);
+
         const {conversationHistory, userChat} = get();
         const index = conversationHistory.findIndex(chat => chat._id === id);
 
         setLoading(true);
+
         const eventSource: ExtendedEventSource = new EventSource(
           `${BASE_URL}/chatbot`,
           {
@@ -116,6 +123,7 @@ export const useChatStore = create(
               Authorization: `Bearer ${SERVER_API_KEY}`,
               connection: 'keep-alive',
             },
+
             method: 'POST',
             body: JSON.stringify({
               id: id,
@@ -133,11 +141,12 @@ export const useChatStore = create(
           }
         };
 
-        userChat.push({
-          _id: userMessage._id,
-          sender: userMessage.sender,
-          message: userMessage.message,
-        });
+        userChat &&
+          userChat.history.push({
+            _id: userMessage._id,
+            sender: userMessage.sender,
+            message: userMessage.message,
+          });
 
         if (index !== -1) {
           conversationHistory[index].history.push({
@@ -156,11 +165,12 @@ export const useChatStore = create(
 
             setMessages((prev: string) => prev + newWord);
           } else {
-            userChat.push({
-              _id: uuid.v4().toString(),
-              sender: 'bot',
-              message: content,
-            });
+            userChat &&
+              userChat.history.push({
+                _id: uuid.v4().toString(),
+                sender: 'bot',
+                message: content,
+              });
 
             if (index !== -1) {
               conversationHistory[index].history.push({
