@@ -42,7 +42,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-  const scrollRef = useRef<ScrollView>();
+  const scrollRef = useRef<ScrollView | null>(null);
   const {newChat, userChat} = useChatStore(state => ({
     newChat: state.newChat,
     userChat: state.userChat,
