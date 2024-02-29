@@ -339,7 +339,7 @@ const continueChat = asyncHandler(async (req: Request, res: Response) => {
   const { message, id }: { message: string; id: string } = req.body;
 
   console.log('message', message);
-  console.log('id', typeof id);
+  console.log('id', id);
 
   if (!id) {
     res.status(400).json('Please enter an chat id');
@@ -368,11 +368,6 @@ const continueChat = asyncHandler(async (req: Request, res: Response) => {
   });
 
   try {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      Connection: 'keep-alive',
-      'Cache-Control': 'no-cache',
-    });
     const stream = openai.beta.chat.completions.stream({
       model: 'gpt-3.5-turbo',
       messages: history.map((msg) => ({
@@ -381,26 +376,6 @@ const continueChat = asyncHandler(async (req: Request, res: Response) => {
       })),
       stream: true,
     });
-
-    try {
-      for await (const chunk of stream) {
-        const { choices } = chunk;
-        const { delta } = choices[0];
-        const { content } = delta;
-        if (content) {
-          process.stdout.write(content || '');
-          res.write(`data: ${JSON.stringify(content)}\n\n`);
-        }
-      }
-
-      res.write('data: [DONE]\n\n');
-    } catch (streamError) {
-      console.error('Stream error:', streamError);
-      res.status(500).json({
-        message: 'An error occurred while streaming chat completions.',
-      });
-      return;
-    }
 
     const botMessage = (await stream.finalChatCompletion()).choices[0].message
       .content;
@@ -416,14 +391,16 @@ const continueChat = asyncHandler(async (req: Request, res: Response) => {
         message: botMessage,
       });
 
-      await conversationHistory.save();
+      const response = await conversationHistory.save();
+      res.status(200).json(response);
+      return;
     }
-    res.end(); // TODO there is a bug here
   } catch (error) {
     console.error((error as Error).message);
     res.status(500).json({
       message: (error as Error).message,
     });
+    return;
   }
 });
 
