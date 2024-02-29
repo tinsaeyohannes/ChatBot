@@ -10,7 +10,7 @@ export type ChatStoreActionTypes = {
     userMessage: ChatConversationTypes,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     id: string,
-    scrollRef: React.MutableRefObject<ScrollView | undefined>,
+    scrollRef: React.MutableRefObject<ScrollView | null>,
   ) => Promise<void>;
   continueChat: (
     userMessage: ChatConversationTypes,
