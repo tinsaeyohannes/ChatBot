@@ -25,6 +25,7 @@ import type {
 } from '../types/useChatStoreTypes';
 import {useChatStore} from '../store/useChatStore';
 import 'react-native-url-polyfill/auto';
+import {truncateString} from '../helper/truncateString';
 // import {SERVER_API_KEY, BASE_URL} from '@env';
 // import RNEventSource from 'react-native-event-source';
 
@@ -41,6 +42,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
+
   const {newChat, userChat} = useChatStore(state => ({
     newChat: state.newChat,
     userChat: state.userChat,
@@ -51,62 +53,20 @@ const ChatScreen: FC<ChatScreenProps> = ({
     sender: 'user',
     message: 'hi',
   });
-  // const [botResponse, setBotResponse] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  console.log('loading', loading);
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
   }, [isDarkMode]);
 
-  // const toggleChat = () => {
-  //   userChat.length === 0
-  //     ? newChat(userMessage, setMessages, setLoading, chat?._id)
-  //     : continueChat(userMessage, setMessages, setLoading, chat?._id);
-  // };
-
   console.log('userUser', userChat);
 
-  //   const url = new URL(`${BASE_URL}/stream`);
+  useEffect(() => {
+    if (chat) {
+      useChatStore.setState({userChat: chat.history});
+    }
+  }, [chat]);
 
-  //   const es = new RNEventSource(`${BASE_URL}/stream`, {
-  //     headers: {
-  //       Authorization: {
-  //         toString: function () {
-  //           return 'Bearer ' + SERVER_API_KEY;
-  //         },
-  //       },
-  //     },
-  //   });
-
-  //   const listener = event => {
-  //     if (event.type === 'open') {
-  //       console.log('Open SSE connection.');
-  //     } else if (event.type === 'message') {
-  //       if (event.data && event.data !== '[DONE]') {
-  //         const data = JSON.parse(event.data);
-  //         console.log('data', data);
-  //         setValue(prev => prev + data);
-  //       } else {
-  //         es.close(); // Close the connection to the server
-  //       }
-  //     } else if (event.type === 'error') {
-  //       console.error('Connection error:', event.message);
-  //       es.close();
-  //     } else if (event.type === 'exception') {
-  //       console.error('Error:', event.message, event.error);
-  //     }
-  //   };
-
-  //   es.addEventListener('open', listener);
-  //   es.addEventListener('message', listener);
-  //   es.addEventListener('error', listener);
-
-  //   return () => {
-  //     es.removeAllListeners();
-  //     es.close();
-  //   };
-  // }, []);
   return (
     <SafeAreaView
       style={[
@@ -128,7 +88,11 @@ const ChatScreen: FC<ChatScreenProps> = ({
             />
           </TouchableOpacity>
 
-          <Text>{newChat.length === 0 ? 'New Chat' : chat?.chatName}</Text>
+          <Text>
+            {newChat.length === 0
+              ? truncateString(chat?.chatName, 10) || 'New Chat'
+              : null}
+          </Text>
 
           <TouchableOpacity
             style={styles.headerButton}
@@ -144,51 +108,36 @@ const ChatScreen: FC<ChatScreenProps> = ({
         </View>
 
         <ScrollView>
-          {chat
-            ? chat?.history.map(message => (
-                <View style={styles.messageContainer} key={message._id}>
-                  <View style={styles.senderPicContainer}>
-                    <Image
-                      source={
-                        message.sender === 'user'
-                          ? {
-                              uri: 'https://i.pravatar.cc/300',
-                            }
-                          : require('../assets/icons/ai.png')
-                      }
-                      style={styles.senderPic}
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.senderName}>
-                      {message.sender === 'user' ? 'You' : 'AI'}
-                    </Text>
-                    <Text style={styles.message}>{message.message}</Text>
-                  </View>
+          {userChat ? (
+            userChat.map(message => (
+              <View style={styles.messageContainer} key={message._id}>
+                <View style={styles.senderPicContainer}>
+                  <Image
+                    source={
+                      message.sender === 'user'
+                        ? {
+                            uri: 'https://i.pravatar.cc/300',
+                          }
+                        : require('../assets/icons/ai.png')
+                    }
+                    style={styles.senderPic}
+                  />
                 </View>
-              ))
-            : userChat.map(message => (
-                <View style={styles.messageContainer} key={message._id}>
-                  <View style={styles.senderPicContainer}>
-                    <Image
-                      source={
-                        message.sender === 'user'
-                          ? {
-                              uri: 'https://i.pravatar.cc/300',
-                            }
-                          : require('../assets/icons/ai.png')
-                      }
-                      style={styles.senderPic}
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.senderName}>
-                      {message.sender === 'user' ? 'You' : 'AI'}
-                    </Text>
+                <View>
+                  <Text style={styles.senderName}>
+                    {message.sender === 'user' ? 'You' : 'AI'}
+                  </Text>
+                  {loading && message.sender === 'user' ? (
+                    <></>
+                  ) : (
                     <Text style={styles.message}>{message.message}</Text>
-                  </View>
+                  )}
                 </View>
-              ))}
+              </View>
+            ))
+          ) : (
+            <></>
+          )}
         </ScrollView>
         <View>
           <View style={styles.chatInputContainer}>
