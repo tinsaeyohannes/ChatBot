@@ -1,4 +1,4 @@
-import React, {useEffect, useState, type FC} from 'react';
+import React, {useEffect, useRef, useState, type FC} from 'react';
 import {
   Image,
   ScrollView,
@@ -42,7 +42,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-
+  const scrollRef = useRef<ScrollView>();
   const {newChat, userChat} = useChatStore(state => ({
     newChat: state.newChat,
     userChat: state.userChat,
@@ -57,13 +57,14 @@ const ChatScreen: FC<ChatScreenProps> = ({
 
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
-  }, [isDarkMode]);
+    console.log('loading', loading);
+  }, [isDarkMode, loading]);
 
   console.log('userUser', userChat);
 
   useEffect(() => {
     if (chat) {
-      useChatStore.setState({userChat: chat.history});
+      useChatStore.setState({userChat: chat});
     }
   }, [chat]);
 
@@ -97,7 +98,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => {
-              useChatStore.setState({userChat: []});
+              useChatStore.setState({userChat: null});
             }}>
             <Feather
               name="plus"
@@ -107,9 +108,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        <ScrollView>
-          {userChat ? (
-            userChat.map(message => (
+        <ScrollView ref={scrollRef}>
+          {userChat && userChat.history ? (
+            userChat.history.map(message => (
               <View style={styles.messageContainer} key={message._id}>
                 <View style={styles.senderPicContainer}>
                   <Image
@@ -127,11 +128,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   <Text style={styles.senderName}>
                     {message.sender === 'user' ? 'You' : 'AI'}
                   </Text>
-                  {loading && message.sender === 'user' ? (
-                    <></>
-                  ) : (
-                    <Text style={styles.message}>{message.message}</Text>
-                  )}
+                  <Text style={styles.message}>{message.message}</Text>
                 </View>
               </View>
             ))
@@ -153,7 +150,13 @@ const ChatScreen: FC<ChatScreenProps> = ({
               style={styles.headerButton}
               onPress={() => {
                 // toggleChat();
-                newChat(userMessage, setLoading, chat?._id);
+
+                newChat(
+                  userMessage,
+                  setLoading,
+                  userChat?._id ?? '',
+                  scrollRef,
+                );
               }}>
               <Feather
                 name="send"
@@ -243,4 +246,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatScreen;
+export default React.memo(ChatScreen);
