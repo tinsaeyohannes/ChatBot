@@ -10,6 +10,11 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import DrawerBarContent from './src/drawerBar/DrawerBarContent';
 import {useColorScheme} from 'react-native';
 import {userStore} from './src/store/useStore';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://cc59228a70f3cb8927602390400d772a@o4506451331579904.ingest.us.sentry.io/4506451334004736',
+});
 
 const Drawer = createDrawerNavigator();
 
