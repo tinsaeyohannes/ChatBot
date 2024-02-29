@@ -1,6 +1,8 @@
+import type {ScrollView} from 'react-native';
+
 export type ChatStoreStateTypes = {
   conversationHistory: ChatHistoryTypes[];
-  userChat: ChatConversationTypes[];
+  userChat: ChatHistoryTypes | null;
 };
 
 export type ChatStoreActionTypes = {
@@ -8,6 +10,7 @@ export type ChatStoreActionTypes = {
     userMessage: ChatConversationTypes,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     id: string,
+    scrollRef: React.MutableRefObject<ScrollView | undefined>,
   ) => Promise<void>;
   continueChat: (
     userMessage: ChatConversationTypes,
