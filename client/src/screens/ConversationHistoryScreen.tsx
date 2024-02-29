@@ -1,4 +1,4 @@
-import React, {useEffect, type FC} from 'react';
+import React, {type FC} from 'react';
 import {
   FlatList,
   Image,
@@ -16,8 +16,9 @@ import {
 import {userStore} from '../store/useStore';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useChatStore} from '../store/useChatStore';
-import {formatDistanceToNow} from 'date-fns';
 import type {DrawerNavigationHelpers} from '@react-navigation/drawer/lib/typescript/src/types';
+import {truncateString} from '../helper/truncateString';
+import {formatDate} from '../helper/formatDate';
 
 type ConversationHistoryScreenProps = {
   navigation: DrawerNavigationHelpers;
@@ -30,30 +31,18 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
 
-  const {conversationHistory, userChat} = useChatStore(state => ({
+  const {conversationHistory} = useChatStore(state => ({
     conversationHistory: state.conversationHistory,
     userChat: state.userChat,
   }));
 
-  useEffect(() => {
-    console.log('conversationHistory useEffect', conversationHistory);
-    console.log(
-      'history useEffect',
-      conversationHistory.map(item => item.history),
-    );
-  }, [conversationHistory]);
-
-  const truncateString = (str: string) => {
-    if (str?.length > 34) {
-      return str.slice(0, 30) + '...';
-    } else {
-      return str;
-    }
-  };
-
-  const formatDate = (date: Date) => {
-    return formatDistanceToNow(date, {addSuffix: false});
-  };
+  // useEffect(() => {
+  //   console.log('conversationHistory useEffect', conversationHistory);
+  //   console.log(
+  //     'history useEffect',
+  //     conversationHistory.map(item => item.history),
+  //   );
+  // }, [conversationHistory]);
 
   return (
     <View style={styles.safeAreaViewContainer}>
@@ -69,6 +58,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
           <TextInput placeholder="Search" style={styles.inputField} />
         </View>
       </View>
+
       <FlatList
         data={conversationHistory || []}
         showsVerticalScrollIndicator={false}
@@ -77,7 +67,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
           <TouchableOpacity
             onPress={() => {
               const chat = item;
-              userChat.length === 0;
+              useChatStore.setState({userChat: null});
               navigation.navigate('Chat', {chat});
             }}>
             <View style={styles.listItemContainer}>
@@ -86,7 +76,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                   styles.text,
                   isDarkMode ? styles.lightText : styles.darkText,
                 ]}>
-                {truncateString(item?.chatName)}
+                {truncateString(item?.chatName, 30)}
               </Text>
               <Text style={[styles.dateText]}>
                 {formatDate(item.createdAt)} ago
