@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import OpenAI from 'openai';
 import HistoryModel from '../models/ConversationHistory.mongo';
 import asyncHandler from 'express-async-handler';
+
 import {
   APIConnectionError,
   APIConnectionTimeoutError,
@@ -161,6 +162,7 @@ const newChatStream = asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 });
+
 const newChat = asyncHandler(async (req: Request, res: Response) => {
   const { message }: { message: string } = req.body;
 
@@ -372,7 +374,7 @@ const continueChat = asyncHandler(async (req: Request, res: Response) => {
       model: 'gpt-3.5-turbo',
       messages: history.map((msg) => ({
         role: 'user',
-        content: `use the following previous context and use expressive emojis also add a bit of some sarcastic tones when answering :  ${msg.role + msg.content}`,
+        content: `use the following previous context and use expressive emojis also add a bit of some sarcastic tones when answering. Don’t justify your answers. Don’t give information not mentioned in the CONTEXT INFORMATION:  ${msg.role + msg.content}`,
       })),
       stream: true,
     });
