@@ -41,11 +41,7 @@ export const useChatStore = create(
         const {conversationHistory, userChat} = get();
 
         scrollRef.current?.scrollToEnd({animated: true});
-        // if (!id) {
-        //   console.log('id not found');
-        //   console.log('userChat', userChat);
-        //   return;
-        // }
+
         const url = userChat === null ? 'chat/newChat' : 'chat/continueChat';
         try {
           userChat?.history.push({
@@ -87,6 +83,7 @@ export const useChatStore = create(
           if (userChat?.history.length === 0) {
             conversationHistory.unshift(data);
             set({
+              conversationHistory: [...conversationHistory, data],
               userChat: data,
             });
           } else {
