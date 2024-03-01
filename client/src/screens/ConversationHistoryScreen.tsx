@@ -1,4 +1,4 @@
-import React, {type FC} from 'react';
+import React, {useState, type FC} from 'react';
 import {
   FlatList,
   Image,
@@ -31,10 +31,11 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
 
-  const {conversationHistory} = useChatStore(state => ({
+  const {conversationHistory, userChat} = useChatStore(state => ({
     conversationHistory: state.conversationHistory,
     userChat: state.userChat,
   }));
+  const [chatIndex, setChatIndex] = useState<number | null>(0);
 
   // useEffect(() => {
   //   console.log('conversationHistory useEffect', conversationHistory);
@@ -63,14 +64,29 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
         data={conversationHistory || []}
         showsVerticalScrollIndicator={false}
         keyExtractor={item => item._id}
-        renderItem={({item}) => (
+        renderItem={({item, index}) => (
           <TouchableOpacity
             onPress={() => {
               const chat = item;
               useChatStore.setState({userChat: null});
               navigation.navigate('Chat', {chat});
+              if (!userChat) {
+                setChatIndex(null);
+              } else {
+                setChatIndex(index);
+              }
             }}>
-            <View style={styles.listItemContainer}>
+            <View
+              style={[
+                styles.listItemContainer,
+                chatIndex === index && {
+                  backgroundColor: 'gray',
+                  borderColor: 'gray',
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  paddingHorizontal: 5,
+                },
+              ]}>
               <Text
                 style={[
                   styles.text,
