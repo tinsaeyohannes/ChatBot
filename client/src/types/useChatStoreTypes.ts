@@ -1,4 +1,5 @@
 import type {ScrollView} from 'react-native';
+import type {DropdownAlertData} from 'react-native-dropdownalert';
 
 export type ChatStoreStateTypes = {
   conversationHistory: ChatHistoryTypes[];
@@ -11,6 +12,7 @@ export type ChatStoreActionTypes = {
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     id: string,
     scrollRef: React.MutableRefObject<ScrollView | null>,
+    alert: (_data: DropdownAlertData) => Promise<DropdownAlertData>,
   ) => Promise<void>;
   continueChat: (
     userMessage: ChatConversationTypes,
