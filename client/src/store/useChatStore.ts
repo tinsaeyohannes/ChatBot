@@ -17,6 +17,7 @@ import EventSource, {
   type OpenEvent,
   type TimeoutEvent,
 } from 'react-native-sse';
+import {DropdownAlertType} from 'react-native-dropdownalert';
 
 interface ExtendedEventSource extends EventSource {
   onmessage?: (event: MessageEvent) => void;
@@ -35,9 +36,16 @@ export const useChatStore = create(
   persist<ChatStoreStateTypes & ChatStoreActionTypes>(
     (set, get) => ({
       conversationHistory: [],
-      userChat: null,
+      userChat: {
+        _id: '',
+        history: [],
+        chatName: '',
+        __v: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
 
-      newChat: async (userMessage, setLoading, id, scrollRef) => {
+      newChat: async (userMessage, setLoading, id, scrollRef, alert) => {
         const {conversationHistory, userChat} = get();
 
         scrollRef.current?.scrollToEnd({animated: true});
@@ -49,7 +57,7 @@ export const useChatStore = create(
             sender: 'user',
             message: userMessage.message,
           });
-
+          console.log('userChat added', userChat);
           setLoading(true);
           console.log('url', url);
 
@@ -95,6 +103,11 @@ export const useChatStore = create(
           setLoading(false);
         } catch (error) {
           console.error(error);
+          await alert({
+            type: DropdownAlertType.Error,
+            title: 'Error',
+            message: 'Something went wrong.',
+          });
         }
       },
 
