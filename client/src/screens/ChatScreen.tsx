@@ -68,6 +68,10 @@ const ChatScreen: FC<ChatScreenProps> = ({
     }
   }, [chat]);
 
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({animated: true});
+  }, []);
+
   return (
     <SafeAreaView
       style={[
@@ -99,6 +103,11 @@ const ChatScreen: FC<ChatScreenProps> = ({
             style={styles.headerButton}
             onPress={() => {
               useChatStore.setState({userChat: null});
+              setUserMessage({
+                _id: '',
+                sender: '',
+                message: '',
+              });
             }}>
             <Feather
               name="plus"
@@ -133,7 +142,24 @@ const ChatScreen: FC<ChatScreenProps> = ({
               </View>
             ))
           ) : (
-            <></>
+            <>
+              {userMessage.message && (
+                <View style={styles.messageContainer}>
+                  <View style={styles.senderPicContainer}>
+                    <Image
+                      source={{
+                        uri: 'https://i.pravatar.cc/300',
+                      }}
+                      style={styles.senderPic}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.senderName}>You</Text>
+                    <Text style={styles.message}>{userMessage.message}</Text>
+                  </View>
+                </View>
+              )}
+            </>
           )}
         </ScrollView>
         <View>
