@@ -26,6 +26,9 @@ import type {
 import {useChatStore} from '../store/useChatStore';
 import 'react-native-url-polyfill/auto';
 import {truncateString} from '../helper/truncateString';
+import DropdownAlert, {
+  type DropdownAlertData,
+} from 'react-native-dropdownalert';
 // import {SERVER_API_KEY, BASE_URL} from '@env';
 // import RNEventSource from 'react-native-event-source';
 
@@ -71,7 +74,8 @@ const ChatScreen: FC<ChatScreenProps> = ({
   useEffect(() => {
     scrollRef.current?.scrollToEnd({animated: true});
   }, []);
-
+  let alert = (_data: DropdownAlertData) =>
+    new Promise<DropdownAlertData>(res => res);
   return (
     <SafeAreaView
       style={[
@@ -142,24 +146,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
               </View>
             ))
           ) : (
-            <>
-              {userMessage.message && (
-                <View style={styles.messageContainer}>
-                  <View style={styles.senderPicContainer}>
-                    <Image
-                      source={{
-                        uri: 'https://i.pravatar.cc/300',
-                      }}
-                      style={styles.senderPic}
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.senderName}>You</Text>
-                    <Text style={styles.message}>{userMessage.message}</Text>
-                  </View>
-                </View>
-              )}
-            </>
+            <></>
           )}
         </ScrollView>
         <View>
@@ -182,6 +169,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   setLoading,
                   userChat?._id ?? '',
                   scrollRef,
+                  alert,
                 );
               }}>
               <Feather
@@ -193,6 +181,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
           </View>
         </View>
       </View>
+      <DropdownAlert alert={func => (alert = func)} />
     </SafeAreaView>
   );
 };
