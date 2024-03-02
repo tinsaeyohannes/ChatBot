@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState, type FC} from 'react';
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StatusBar,
@@ -136,7 +137,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   <Text style={styles.senderName}>
                     {message.sender === 'user' ? 'You' : 'AI'}
                   </Text>
-                  <Text style={styles.message}>{message.message}</Text>
+                  <Text selectable style={styles.message}>
+                    {message.message}
+                  </Text>
                 </View>
               </View>
             ))
@@ -151,26 +154,29 @@ const ChatScreen: FC<ChatScreenProps> = ({
               style={styles.inputField}
               onChangeText={msg => setUserMessage(msg)}
             />
+            {loading ? (
+              <ActivityIndicator size={'large'} />
+            ) : (
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={() => {
+                  // toggleChat();
 
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => {
-                // toggleChat();
-
-                newChat(
-                  userMessage,
-                  setLoading,
-                  userChat?._id ?? '',
-                  scrollRef,
-                  alert,
-                );
-              }}>
-              <Feather
-                name="send"
-                size={24}
-                color={isDarkMode ? 'white' : 'black'}
-              />
-            </TouchableOpacity>
+                  newChat(
+                    userMessage,
+                    setLoading,
+                    userChat?._id ?? '',
+                    scrollRef,
+                    alert,
+                  );
+                }}>
+                <Feather
+                  name="send"
+                  size={24}
+                  color={isDarkMode ? 'white' : 'black'}
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
