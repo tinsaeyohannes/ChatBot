@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {create} from 'zustand';
 import {createJSONStorage, persist} from 'zustand/middleware';
 import type {
+  ChatConversationTypes,
   ChatHistoryTypes,
   ChatStoreActionTypes,
   ChatStoreStateTypes,
@@ -40,23 +41,42 @@ export const useChatStore = create(
         _id: '',
         history: [],
         chatName: '',
-        __v: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
 
       newChat: async (userMessage, setLoading, id, scrollRef, alert) => {
+        console.log('newChat called');
         const {conversationHistory, userChat} = get();
-
+        if (!userMessage) {
+          await alert({
+            type: DropdownAlertType.Info,
+            title: 'INFO',
+            message: 'Please enter a message.',
+          });
+          return;
+        }
+        console.log('userMessage', userMessage);
         scrollRef.current?.scrollToEnd({animated: true});
 
-        const url = userChat === null ? 'chat/newChat' : 'chat/continueChat';
+        const url =
+          userChat.history.length === 0 ? 'chat/newChat' : 'chat/continueChat';
+
         try {
-          userChat?.history.push({
-            _id: uuid.v4().toString(),
-            sender: 'user',
-            message: userMessage.message,
-          });
+          const newHistory = [
+            ...userChat.history,
+            {
+              _id: uuid.v4().toString(),
+              sender: 'user',
+              message: userMessage,
+            },
+          ] as ChatConversationTypes[];
+
+          const updatedUserChat = {
+            ...userChat,
+            history: newHistory,
+          } as ChatHistoryTypes;
+
+          set({userChat: updatedUserChat});
+
           console.log('userChat added', userChat);
           setLoading(true);
           console.log('url', url);
@@ -71,30 +91,38 @@ export const useChatStore = create(
             method: 'POST',
             body: JSON.stringify({
               id: id,
-              message: userMessage.message,
+              message: userMessage,
             }),
           });
 
-          const data: ChatHistoryTypes = await response.json();
+          if (response.status === 200) {
+            const data: ChatHistoryTypes = await response.json();
 
-          if (!data) {
-            throw new Error('API response is undefined');
-          }
+            if (!data) {
+              throw new Error('API response is undefined');
+            }
 
-          scrollRef.current?.scrollToEnd({animated: true});
+            scrollRef.current?.scrollToEnd({animated: true});
 
-          if (userChat?.history.length === 0) {
-            conversationHistory.unshift(data);
-            set({
-              // conversationHistory: [...conversationHistory, data],
-              userChat: data,
-            });
+            if (userChat?.history.length === 0) {
+              // conversationHistory.unshift(data);
+              set({
+                conversationHistory: [data, ...conversationHistory],
+                userChat: data,
+              });
+            } else {
+              set({
+                userChat: data,
+              });
+            }
           } else {
             set({
-              userChat: data,
+              userChat: {
+                ...userChat,
+                history: [],
+              },
             });
           }
-
           setLoading(false);
         } catch (error) {
           console.error(error);
