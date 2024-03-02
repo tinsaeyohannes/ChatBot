@@ -10,23 +10,8 @@ import type {
 import axios from 'axios';
 import {SERVER_API_KEY, BASE_URL} from '@env';
 import uuid from 'react-native-uuid';
-import EventSource, {
-  type CloseEvent,
-  type ErrorEvent,
-  type ExceptionEvent,
-  type MessageEvent,
-  type OpenEvent,
-  type TimeoutEvent,
-} from 'react-native-sse';
-import {DropdownAlertType} from 'react-native-dropdownalert';
 
-interface ExtendedEventSource extends EventSource {
-  onmessage?: (event: MessageEvent) => void;
-  onopen?: (event: OpenEvent) => void;
-  onclose?: (event: CloseEvent) => void;
-  ontimeout?: (event: TimeoutEvent) => void;
-  onerror?: (error: Event) => void;
-}
+import {DropdownAlertType} from 'react-native-dropdownalert';
 
 console.log('SERVER_API_KEY', SERVER_API_KEY);
 console.log('BASE_URL', BASE_URL);
@@ -44,7 +29,6 @@ export const useChatStore = create(
       },
 
       newChat: async (userMessage, setLoading, id, scrollRef, alert) => {
-        console.log('newChat called');
         const {conversationHistory, userChat} = get();
         if (!userMessage) {
           await alert({
@@ -54,32 +38,28 @@ export const useChatStore = create(
           });
           return;
         }
-        console.log('userMessage', userMessage);
+
         scrollRef.current?.scrollToEnd({animated: true});
 
         const url =
           userChat.history.length === 0 ? 'chat/newChat' : 'chat/continueChat';
 
         try {
-          const newHistory = [
-            ...userChat.history,
-            {
-              _id: uuid.v4().toString(),
-              sender: 'user',
-              message: userMessage,
-            },
-          ] as ChatConversationTypes[];
-
           const updatedUserChat = {
             ...userChat,
-            history: newHistory,
+            history: [
+              ...userChat.history,
+              {
+                _id: uuid.v4().toString(),
+                sender: 'user',
+                message: userMessage,
+              },
+            ] as ChatConversationTypes[],
           } as ChatHistoryTypes;
 
           set({userChat: updatedUserChat});
 
-          console.log('userChat added', userChat);
           setLoading(true);
-          console.log('url', url);
 
           const response = await fetch(`${BASE_URL}/${url}`, {
             headers: {
@@ -105,7 +85,6 @@ export const useChatStore = create(
             scrollRef.current?.scrollToEnd({animated: true});
 
             if (userChat?.history.length === 0) {
-              // conversationHistory.unshift(data);
               set({
                 conversationHistory: [data, ...conversationHistory],
                 userChat: data,
@@ -121,6 +100,11 @@ export const useChatStore = create(
                 ...userChat,
                 history: [],
               },
+            });
+            await alert({
+              type: DropdownAlertType.Error,
+              title: 'Error',
+              message: 'Something went wrong. Please try again.',
             });
           }
           setLoading(false);
