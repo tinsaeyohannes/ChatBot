@@ -48,7 +48,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const {newChat, userChat} = useChatStore(state => ({
     newChat: state.newChat,
     userChat: state.userChat,
-    continueChat: state.continueChat,
   }));
   const [userMessage, setUserMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
