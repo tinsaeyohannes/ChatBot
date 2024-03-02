@@ -3,12 +3,12 @@ import type {DropdownAlertData} from 'react-native-dropdownalert';
 
 export type ChatStoreStateTypes = {
   conversationHistory: ChatHistoryTypes[];
-  userChat: ChatHistoryTypes | null;
+  userChat: ChatHistoryTypes;
 };
 
 export type ChatStoreActionTypes = {
   newChat: (
-    userMessage: ChatConversationTypes,
+    userMessage: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     id: string,
     scrollRef: React.MutableRefObject<ScrollView | null>,
@@ -33,10 +33,10 @@ export type ChatConversationTypes = {
 };
 
 export type ChatHistoryTypes = {
-  __v: number;
+  __v?: number;
   _id: string;
   chatName: string;
   history: ChatConversationTypes[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
