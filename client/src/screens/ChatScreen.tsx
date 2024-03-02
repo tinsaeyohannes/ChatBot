@@ -19,10 +19,7 @@ import {
 } from 'react-native-responsive-screen';
 import type {ParamListBase} from '@react-navigation/native';
 import type {DrawerNavigationProp} from '@react-navigation/drawer';
-import type {
-  ChatConversationTypes,
-  ChatHistoryTypes,
-} from '../types/useChatStoreTypes';
+import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
 import {useChatStore} from '../store/useChatStore';
 import 'react-native-url-polyfill/auto';
 import {truncateString} from '../helper/truncateString';
@@ -51,11 +48,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
     userChat: state.userChat,
     continueChat: state.continueChat,
   }));
-  const [userMessage, setUserMessage] = useState<ChatConversationTypes>({
-    _id: new Date().toString(),
-    sender: 'user',
-    message: 'hi',
-  });
+  const [userMessage, setUserMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -106,12 +99,14 @@ const ChatScreen: FC<ChatScreenProps> = ({
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => {
-              useChatStore.setState({userChat: null});
-              setUserMessage({
-                _id: '',
-                sender: '',
-                message: '',
+              useChatStore.setState({
+                userChat: {
+                  _id: '',
+                  history: [],
+                  chatName: '',
+                },
               });
+              setUserMessage('');
             }}>
             <Feather
               name="plus"
@@ -154,9 +149,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
             <TextInput
               placeholder="Message"
               style={styles.inputField}
-              onChangeText={msg =>
-                setUserMessage({...userMessage, message: msg})
-              }
+              onChangeText={msg => setUserMessage(msg)}
             />
 
             <TouchableOpacity
