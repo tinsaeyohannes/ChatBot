@@ -47,8 +47,14 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
       setUpdatedConversationHistory(conversationHistory);
     } else {
       setUpdatedConversationHistory(
-        conversationHistory.filter(item =>
-          item?.chatName?.toLowerCase().includes(searchText.toLowerCase()),
+        conversationHistory.filter(
+          item =>
+            item?.chatName?.toLowerCase().includes(searchText.toLowerCase()) ||
+            item?.history
+              ?.map(itm => itm.message)
+              .join(' ')
+              .toLowerCase()
+              .includes(searchText.toLowerCase()),
         ),
       );
     }
