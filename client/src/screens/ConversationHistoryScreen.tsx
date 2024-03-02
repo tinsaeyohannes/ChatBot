@@ -60,14 +60,6 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     }
   }, [conversationHistory, searchText]);
 
-  // useEffect(() => {
-  //   console.log('conversationHistory useEffect', conversationHistory);
-  //   console.log(
-  //     'history useEffect',
-  //     conversationHistory.map(item => item.history),
-  //   );
-  // }, [conversationHistory]);
-
   return (
     <View style={styles.safeAreaViewContainer}>
       <StatusBar
