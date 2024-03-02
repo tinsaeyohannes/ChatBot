@@ -53,7 +53,7 @@ export const useChatStore = create(
         const url = userChat === null ? 'chat/newChat' : 'chat/continueChat';
         try {
           userChat?.history.push({
-            _id: new Date().toString(),
+            _id: uuid.v4().toString(),
             sender: 'user',
             message: userMessage.message,
           });
@@ -77,11 +77,6 @@ export const useChatStore = create(
 
           const data: ChatHistoryTypes = await response.json();
 
-          console.log('history returned', [...data.history]);
-
-          console.log('history', data.history);
-          console.log(data);
-
           if (!data) {
             throw new Error('API response is undefined');
           }
@@ -91,7 +86,7 @@ export const useChatStore = create(
           if (userChat?.history.length === 0) {
             conversationHistory.unshift(data);
             set({
-              conversationHistory: [...conversationHistory, data],
+              // conversationHistory: [...conversationHistory, data],
               userChat: data,
             });
           } else {
