@@ -51,7 +51,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   }));
   const [userMessage, setUserMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
-
+  const [botTyping, setBotTyping] = useState(false);
   useEffect(() => {
     console.log('isDarkMode', isDarkMode);
     console.log('loading', loading);
@@ -70,6 +70,18 @@ const ChatScreen: FC<ChatScreenProps> = ({
   }, []);
   let alert = (_data: DropdownAlertData) =>
     new Promise<DropdownAlertData>(res => res);
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (loading) {
+        setBotTyping(true);
+      }
+    }, 500);
+
+    if (!loading) {
+      setBotTyping(false);
+    }
+  }, [loading]);
 
   return (
     <SafeAreaView
@@ -122,7 +134,8 @@ const ChatScreen: FC<ChatScreenProps> = ({
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollViewContainer}>
-          {userChat && userChat.history ? (
+          {userChat &&
+            userChat.history &&
             userChat.history.map(message => (
               <View style={styles.messageContainer} key={message._id}>
                 <View style={styles.senderPicContainer}>
@@ -146,9 +159,22 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   </Text>
                 </View>
               </View>
-            ))
-          ) : (
-            <></>
+            ))}
+          {botTyping && (
+            <View style={styles.messageContainer}>
+              <View style={styles.senderPicContainer}>
+                <Image
+                  source={require('../assets/icons/ai.png')}
+                  style={styles.senderPic}
+                />
+              </View>
+              <View>
+                <Text style={styles.senderName}>AI</Text>
+                <Text selectable style={styles.message}>
+                  Typing...
+                </Text>
+              </View>
+            </View>
           )}
         </ScrollView>
         <LinearGradient
@@ -248,6 +274,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: hp(2.5),
+    fontFamily: 'Open-Sans',
     width: wp(75),
     color: '#E5E5E5',
   },
