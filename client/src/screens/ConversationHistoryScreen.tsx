@@ -1,4 +1,4 @@
-import React, {useState, type FC} from 'react';
+import React, {useEffect, useState, type FC} from 'react';
 import {
   FlatList,
   Image,
@@ -35,7 +35,24 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     conversationHistory: state.conversationHistory,
     userChat: state.userChat,
   }));
+
+  const [searchText, setSearchText] = useState<string>('');
+
   const [chatIndex, setChatIndex] = useState<number | null>(0);
+  const [updatedConversationHistory, setUpdatedConversationHistory] =
+    useState(conversationHistory);
+
+  useEffect(() => {
+    if (searchText === '') {
+      setUpdatedConversationHistory(conversationHistory);
+    } else {
+      setUpdatedConversationHistory(
+        conversationHistory.filter(item =>
+          item?.chatName?.toLowerCase().includes(searchText.toLowerCase()),
+        ),
+      );
+    }
+  }, [conversationHistory, searchText]);
 
   // useEffect(() => {
   //   console.log('conversationHistory useEffect', conversationHistory);
@@ -56,19 +73,29 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
       <View style={styles.upperContainer}>
         <View style={[styles.searchContainer, !isDarkMode && styles.lightBg]}>
           <FontAwesome name="search" size={20} color={'gray'} />
-          <TextInput placeholder="Search" style={styles.inputField} />
+          <TextInput
+            placeholder="Search"
+            style={styles.inputField}
+            onChangeText={setSearchText}
+          />
         </View>
       </View>
 
       <FlatList
-        data={conversationHistory || []}
+        data={updatedConversationHistory || []}
         showsVerticalScrollIndicator={false}
         keyExtractor={item => item._id}
         renderItem={({item, index}) => (
           <TouchableOpacity
             onPress={() => {
               const chat = item;
-              useChatStore.setState({userChat: null});
+              useChatStore.setState({
+                userChat: {
+                  _id: '',
+                  history: [],
+                  chatName: '',
+                },
+              });
               navigation.navigate('Chat', {chat});
               if (!userChat) {
                 setChatIndex(null);
@@ -79,23 +106,17 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
             <View
               style={[
                 styles.listItemContainer,
-                chatIndex === index && {
-                  backgroundColor: 'gray',
-                  borderColor: 'gray',
-                  paddingVertical: 10,
-                  borderRadius: 10,
-                  paddingHorizontal: 5,
-                },
+                chatIndex === index && styles.selectedListItem,
               ]}>
               <Text
                 style={[
                   styles.text,
                   isDarkMode ? styles.lightText : styles.darkText,
                 ]}>
-                {truncateString(item?.chatName, 30)}
+                {truncateString(item?.chatName, 28)}
               </Text>
               <Text style={[styles.dateText]}>
-                {formatDate(item.createdAt)} ago
+                {item.createdAt ? formatDate(item.createdAt) : ''} ago
               </Text>
             </View>
           </TouchableOpacity>
@@ -127,9 +148,14 @@ const styles = StyleSheet.create({
   },
   listItemContainer: {
     margin: 15,
-    // flexDirection: 'row',
-    // alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  selectedListItem: {
+    backgroundColor: 'gray',
+    borderColor: 'gray',
+    paddingVertical: 10,
+    borderRadius: 10,
+    paddingHorizontal: 5,
   },
   text: {
     fontSize: hp(2.2),
