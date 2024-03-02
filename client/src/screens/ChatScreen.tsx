@@ -27,6 +27,7 @@ import {truncateString} from '../helper/truncateString';
 import DropdownAlert, {
   type DropdownAlertData,
 } from 'react-native-dropdownalert';
+import LinearGradient from 'react-native-linear-gradient';
 // import {SERVER_API_KEY, BASE_URL} from '@env';
 // import RNEventSource from 'react-native-event-source';
 
@@ -70,6 +71,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   }, []);
   let alert = (_data: DropdownAlertData) =>
     new Promise<DropdownAlertData>(res => res);
+
   return (
     <SafeAreaView
       style={[
@@ -117,7 +119,10 @@ const ChatScreen: FC<ChatScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        <ScrollView ref={scrollRef}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollViewContainer}>
           {userChat && userChat.history ? (
             userChat.history.map(message => (
               <View style={styles.messageContainer} key={message._id}>
@@ -147,10 +152,15 @@ const ChatScreen: FC<ChatScreenProps> = ({
             <></>
           )}
         </ScrollView>
-        <View>
+        <LinearGradient
+          start={{x: 1, y: 0}}
+          end={{x: 1, y: 1}}
+          style={styles.linearGradient}
+          colors={['#03130F00', '#081814', '#03130F']}>
           <View style={styles.chatInputContainer}>
             <TextInput
               placeholder="Message"
+              placeholderTextColor={isDarkMode ? 'white' : 'black'}
               style={styles.inputField}
               onChangeText={msg => setUserMessage(msg)}
             />
@@ -160,8 +170,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
               <TouchableOpacity
                 style={styles.headerButton}
                 onPress={() => {
-                  // toggleChat();
-
                   newChat(
                     userMessage,
                     setLoading,
@@ -178,7 +186,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </LinearGradient>
       </View>
       <DropdownAlert alert={func => (alert = func)} />
     </SafeAreaView>
@@ -219,15 +227,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: '#E5E5E5',
-    width: hp(7),
-    height: hp(7),
+    width: hp(5),
+    height: hp(5),
     borderRadius: 50,
     margin: hp(1.5),
     overflow: 'hidden',
   },
   senderPic: {
-    width: hp(6),
-    height: hp(6),
+    width: hp(5),
+    height: hp(5),
     borderRadius: 50,
   },
 
@@ -236,10 +244,24 @@ const styles = StyleSheet.create({
     fontSize: hp(2.5),
     color: 'lightblue',
   },
+  darkText: {
+    color: 'dark',
+  },
   message: {
     fontSize: hp(2.5),
     width: wp(75),
     color: '#E5E5E5',
+  },
+  linearGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: hp(15),
+    justifyContent: 'flex-end',
+  },
+  scrollViewContainer: {
+    paddingBottom: hp(15),
   },
   messageContainer: {
     flexDirection: 'row',
