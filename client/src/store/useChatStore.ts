@@ -90,17 +90,24 @@ export const useChatStore = create(
                 userChat: data,
               });
             } else {
+              const chatIndex = conversationHistory.findIndex(
+                chat => chat._id === id,
+              );
+
+              set({
+                conversationHistory: [
+                  ...conversationHistory.slice(0, chatIndex),
+                  data,
+                  ...conversationHistory.slice(chatIndex + 1),
+                ],
+              });
               set({
                 userChat: data,
               });
             }
           } else {
-            set({
-              userChat: {
-                ...userChat,
-                history: [],
-              },
-            });
+            setLoading(false);
+
             await alert({
               type: DropdownAlertType.Error,
               title: 'Error',
