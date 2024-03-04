@@ -1,8 +1,8 @@
-import express, { Router } from 'express';
 import {
   openAiContinueChat,
   openAiNewChat,
-} from '../../controllers/ai-chat-models/openAi';
+} from '../../controllers/ai-chat-models/openAI';
+import express, { Router } from 'express';
 
 const OpenAIRouter: Router = express.Router();
 
