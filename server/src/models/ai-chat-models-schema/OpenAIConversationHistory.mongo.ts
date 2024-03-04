@@ -14,7 +14,7 @@ interface ConversationHistoryDocument extends Document {
   history: ConversationTurn[];
 }
 
-const HistorySchema: Schema = new mongoose.Schema(
+const OpenAIHistorySchema: Schema = new mongoose.Schema(
   {
     chatName: {
       type: String,
@@ -46,7 +46,7 @@ const HistorySchema: Schema = new mongoose.Schema(
 
 const OpenAIHistoryModel = mongoose.model<ConversationHistoryDocument>(
   'OpenAIChatHistory',
-  HistorySchema,
+  OpenAIHistorySchema,
 );
 
 export default OpenAIHistoryModel;
