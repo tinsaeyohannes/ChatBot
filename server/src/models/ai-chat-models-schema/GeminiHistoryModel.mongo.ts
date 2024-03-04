@@ -14,7 +14,7 @@ interface ConversationHistoryDocument extends Document {
   history: ConversationTurn[];
 }
 
-const HistorySchema: Schema = new mongoose.Schema(
+const GeminiHistorySchema: Schema = new mongoose.Schema(
   {
     chatName: {
       type: String,
@@ -43,7 +43,7 @@ const HistorySchema: Schema = new mongoose.Schema(
 
 const GeminiHistoryModel = mongoose.model<ConversationHistoryDocument>(
   'GeminiChatHistory',
-  HistorySchema,
+  GeminiHistorySchema,
 );
 
 export default GeminiHistoryModel;
