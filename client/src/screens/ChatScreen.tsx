@@ -195,6 +195,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
               <TouchableOpacity
                 style={styles.headerButton}
                 onPress={() => {
+                  setUserMessage('');
                   newChat(
                     userMessage,
                     setLoading,
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#292929',
   },
   inputField: {
-    width: wp(60),
+    width: wp(70),
     marginLeft: hp(1),
   },
 });
