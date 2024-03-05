@@ -11,6 +11,7 @@ import DrawerBarContent from './src/drawerBar/DrawerBarContent';
 import {useColorScheme} from 'react-native';
 import {userStore} from './src/store/useStore';
 import * as Sentry from '@sentry/react-native';
+import ImageGenerateScreen from './src/screens/ImageGenerateScreen';
 
 Sentry.init({
   dsn: 'https://cc59228a70f3cb8927602390400d772a@o4506451331579904.ingest.us.sentry.io/4506451334004736',
@@ -79,6 +80,15 @@ function App() {
         <Drawer.Screen
           name="Profile"
           component={ProfileScreen}
+          options={{
+            swipeEnabled: false,
+            headerShown: false,
+            drawerLabel: 'Profile',
+          }}
+        />
+        <Drawer.Screen
+          name="Image"
+          component={ImageGenerateScreen}
           options={{
             swipeEnabled: false,
             headerShown: false,
