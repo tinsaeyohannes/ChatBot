@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
-import fs from 'fs';
 console.log(process.env.OPENAI_API_KEY);
 
 const openai = new OpenAI({
