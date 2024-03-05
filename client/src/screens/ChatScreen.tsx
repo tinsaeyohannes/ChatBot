@@ -75,13 +75,15 @@ const ChatScreen: FC<ChatScreenProps> = ({
     setTimeout(() => {
       if (loading) {
         setBotTyping(true);
+      } else {
+        setBotTyping(false);
       }
     }, 500);
 
     if (!loading) {
       setBotTyping(false);
     }
-  }, [loading]);
+  }, [botTyping, loading]);
 
   return (
     <SafeAreaView
