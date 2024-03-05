@@ -8,7 +8,7 @@ import {
   APIError,
   RateLimitError,
 } from 'openai/error';
-import OpenAIHistoryModel from '../../models/ai-chat-models-schema/OpenAIConversationHistory.mongo';
+import OpenAIHistoryModel from '../../models/ai-chat-models-schema/openAIConversationHistory.mongo';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
