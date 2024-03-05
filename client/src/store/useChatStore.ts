@@ -61,7 +61,7 @@ export const useChatStore = create(
 
           setLoading(true);
 
-          const response = await fetch(`${BASE_URL}/${url}`, {
+          const response = await fetch(`${BASE_URL}/openai/${url}`, {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${SERVER_API_KEY}`,
@@ -116,6 +116,7 @@ export const useChatStore = create(
           }
           setLoading(false);
         } catch (error) {
+          setLoading(false);
           console.error(error);
           await alert({
             type: DropdownAlertType.Error,
@@ -130,7 +131,7 @@ export const useChatStore = create(
         try {
           const {data} = await axios({
             method: 'GET',
-            url: '/all',
+            url: '/all?model=openai',
             headers: {
               Accept: 'application/json',
               'Content-Type': 'application/json',
