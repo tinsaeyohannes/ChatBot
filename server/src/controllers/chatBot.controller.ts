@@ -3,18 +3,22 @@ import HistoryModel from '../models/ai-chat-models-schema/OpenAIConversationHist
 import asyncHandler from 'express-async-handler';
 import OpenAiHistoryModel from '../models/ai-chat-models-schema/OpenAIConversationHistory.mongo';
 import GeminiHistoryModel from '../models/ai-chat-models-schema/GeminiHistoryModel.mongo';
+import type { ConversationHistoryDocument } from 'models/ai-chat-models-schema/cohereHistoryModel.mongo';
 
 const getAllChatHistory = async (req: Request, res: Response) => {
-  const { model } = req.query;
+  const model = req.query.model;
+
   console.log('model', model);
+
   if (!model) {
     res.status(400).json({
       message: 'Please enter a model',
     });
     return;
   }
+
   try {
-    let allChats: any[] = [];
+    let allChats: ConversationHistoryDocument[] = [];
 
     if (model === 'openai') {
       allChats = await OpenAiHistoryModel.find().sort({ createdAt: -1 }); // Sort by createdAt in descending order
@@ -28,7 +32,6 @@ const getAllChatHistory = async (req: Request, res: Response) => {
       });
       return;
     } else {
-      console.log('All Chats', allChats);
       res.status(200).json(allChats);
     }
   } catch (error) {
