@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { Request, Response } from 'express';
-import GeminiHistoryModel from '../../models/ai-chat-models-schema/GeminiHistoryModel.mongo';
+import GeminiHistoryModel from '../../models/ai-chat-models-schema/geminiHistoryModel.mongo';
 
 const genAIInit = new GoogleGenerativeAI(`${process.env.GEMINI_API_KEY}`);
 
