@@ -10,7 +10,8 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "removeComments": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "src/**/*.spec.ts"]
