@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import HistoryModel from '../models/ai-chat-models-schema/OpenAIConversationHistory.mongo';
 import asyncHandler from 'express-async-handler';
-import OpenAiHistoryModel from '../models/ai-chat-models-schema/OpenAIConversationHistory.mongo';
-import GeminiHistoryModel from '../models/ai-chat-models-schema/GeminiHistoryModel.mongo';
-import type { ConversationHistoryDocument } from 'models/ai-chat-models-schema/cohereHistoryModel.mongo';
+import OpenAiHistoryModel from '../models/ai-chat-models-schema/openAIConversationHistory.mongo';
+import type { ConversationHistoryDocument } from 'types/mongo.schema.types';
+import GeminiHistoryModel from '../models/ai-chat-models-schema/geminiHistoryModel.mongo';
 
 const getAllChatHistory = async (req: Request, res: Response) => {
   const model = req.query.model;
@@ -42,44 +41,20 @@ const getAllChatHistory = async (req: Request, res: Response) => {
   }
 };
 
-const getChatById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  if (!id) {
-    res.status(400).json({
-      message: 'Please enter an chat id',
-    });
-    return;
-  }
-  console.log('id', id);
-  try {
-    const chat = await HistoryModel.findById(id);
-
-    if (!chat) {
-      res.status(404).json({
-        message: 'Chat not found',
-      });
-      return;
-    } else {
-      res.status(200).json(chat);
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: (error as Error).message,
-    });
-  }
-});
-
 const deleteChat = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id, model } = req.params;
   try {
     if (!id) {
       res.status(400).json({ error: 'Please enter an chat id' });
       return;
     }
 
-    const chat = await HistoryModel.findByIdAndDelete(id);
+    let chat: any = {};
+    if (model === 'openai') {
+      chat = await OpenAiHistoryModel.findById(id);
+    } else if (model === 'gemini') {
+      chat = await GeminiHistoryModel.findById(id);
+    }
 
     if (!chat) {
       res.status(404).json({
@@ -98,40 +73,5 @@ const deleteChat = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 });
-const deleteMessage = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    if (!id) {
-      res.status(400).json({ error: 'Please enter message id' });
-      return;
-    }
 
-    const chat = await HistoryModel.findById(id);
-
-    if (!chat) {
-      res.status(404).json({
-        message: 'Chat not found',
-      });
-      return;
-    }
-
-    const index = chat.history.findIndex(
-      (chat) => chat?._id!.toString() === id,
-    );
-
-    chat.history[index].sender = '';
-
-    await chat.save();
-
-    res.status(200).json({
-      message: 'message deleted successfully',
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: (error as Error).message,
-    });
-  }
-});
-
-export { getAllChatHistory, getChatById, deleteChat, deleteMessage };
+export { getAllChatHistory, deleteChat };
