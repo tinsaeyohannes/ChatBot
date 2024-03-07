@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import ImageHistoryModel from '../../models/ai-image-models-schema/imageModel.mongo';
 import OpenAI from 'openai';
 console.log(process.env.OPENAI_API_KEY);
 
@@ -7,23 +8,16 @@ const openai = new OpenAI({
 });
 
 const generateImages = async (req: Request, res: Response) => {
-  const { prompt, image }: { prompt: string; image: string } = req.body;
+  const { prompt }: { prompt: string } = req.body;
   try {
-    if (!image) {
+    if (!prompt) {
       res.status(400).json({
-        error: 'Please upload an image',
-      });
-      return;
-    } else {
-      console.log('image', image);
-
-      res.status(200).json({
-        message: 'image has successfully uploaded',
+        error: 'Please enter a prompt',
       });
       return;
     }
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'dall-e-2',
       prompt: `I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS: ${prompt}`,
       n: 1,
       size: '1024x1024',
@@ -32,8 +26,29 @@ const generateImages = async (req: Request, res: Response) => {
       quality: 'hd',
     });
 
-    const imageData = response.data;
-    res.status(200).json(imageData);
+    const imageData = response.data[0].url;
+    console.log('imageData', imageData);
+    if (imageData) {
+      const newChat = new ImageHistoryModel({
+        chatName: prompt,
+        modelName: 'dalle',
+        history: [
+          {
+            sender: 'user',
+            prompt: prompt,
+          },
+        ],
+      });
+
+      newChat.history.push({
+        sender: 'model',
+        generated_Image: imageData,
+      });
+
+      const response = await newChat.save();
+
+      res.status(200).json(response);
+    }
   } catch (error) {
     console.error((error as Error).message);
     res.status(500).json({
