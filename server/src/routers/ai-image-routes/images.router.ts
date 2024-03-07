@@ -1,4 +1,7 @@
-import { fal } from '../../controllers/ai-image-models/fal';
+import {
+  continueWithfal,
+  generateWithFal,
+} from '../../controllers/ai-image-models/fal';
 import {
   continueToGenerateImages,
   generateImage,
@@ -9,6 +12,7 @@ const ImagesRouter: Router = express.Router();
 
 ImagesRouter.post('/dalle/createImage', generateImage)
   .post('/dalle/continueCreateImage', continueToGenerateImages)
-  .post('/fal/createImage', fal);
+  .post('/fal/createImage', generateWithFal)
+  .post('/fal/continueCreateImage', continueWithfal);
 
 export default ImagesRouter;
