@@ -7,6 +7,7 @@ import {
 } from '../../types/uploadPictureResponseTypes';
 import * as falClient from '@fal-ai/serverless-client';
 import { Models } from '../../constants/models';
+import ImageHistoryModel from 'models/ai-image-models-schema/imageModel.mongo';
 
 falClient.config({
   credentials: process.env.FAL_API_KEY,
@@ -46,7 +47,25 @@ const fal = async (req: Request, res: Response) => {
           },
         );
 
-        res.status(200).json({ image: falResponse.images[0].url });
+        const newChat = new ImageHistoryModel({
+          chatName: prompt,
+          modelName: m.label,
+          modelType: m.modelType,
+          history: [
+            {
+              sender: 'user',
+              prompt: prompt,
+            },
+          ],
+        });
+
+        newChat.history.push({
+          sender: 'model',
+          generated_Image: falResponse.images[0].url,
+        });
+
+        const response = await newChat.save();
+        res.status(200).json(response);
         return;
       } else if (model === m.label && m.modelType === 'img2img') {
         const { secureUrl } = (await uploadPicture(
@@ -61,10 +80,36 @@ const fal = async (req: Request, res: Response) => {
             },
           });
 
+        const newChat = new ImageHistoryModel({
+          chatName: prompt,
+          modelName: m.label,
+          modelType: m.modelType,
+          history: [
+            {
+              sender: 'user',
+              prompt: prompt,
+            },
+          ],
+        });
+
         if (falResponse.images) {
-          res.status(200).json({ image: falResponse.images[0].url });
+          newChat.history.push({
+            sender: 'model',
+            generated_Image: falResponse.images[0].url,
+          });
+
+          const response = await newChat.save();
+          res.status(200).json(response);
+          return;
         } else if (falResponse.image) {
-          res.status(200).json({ image: falResponse.image.url });
+          newChat.history.push({
+            sender: 'model',
+            generated_Image: falResponse.image.url,
+          });
+
+          const response = await newChat.save();
+          res.status(200).json(response);
+          return;
         } else {
           res
             .status(500)
