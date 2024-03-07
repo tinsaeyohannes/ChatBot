@@ -25,5 +25,6 @@ export interface ImagesHistory {
   _id?: ObjectId;
   chatName: string;
   modelName: string;
+  modelType?: string;
   history: ImageTypes[];
 }
