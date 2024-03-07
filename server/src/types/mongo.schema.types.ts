@@ -18,7 +18,7 @@ export interface ImageTypes {
   sender: string;
   prompt?: string;
   original_Image?: string;
-  generated_Image: string;
+  generated_Image?: string;
 }
 
 export interface ImagesHistory {
