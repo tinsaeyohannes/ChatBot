@@ -20,12 +20,14 @@ const fal = async (req: Request, res: Response) => {
     prompt,
     model,
   }: { prompt: string; image: string; model: string } = req.body;
+
   if (!model) {
     res.status(400).json({
       error: 'Please specify model',
     });
     return;
   }
+
   console.log('model', model);
 
   try {

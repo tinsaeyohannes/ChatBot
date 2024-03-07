@@ -26,7 +26,6 @@ export const Models = [
     modelName: 'fal-ai/esrgan',
     modelType: 'img2img',
   },
-
   {
     label: 'supirUpscaler',
     modelName: 'fal-ai/supir',
@@ -40,6 +39,11 @@ export const Models = [
   {
     label: 'faceRetoucher',
     modelName: 'fal-ai/retoucher',
+    modelType: 'img2img',
+  },
+  {
+    label: 'creativeUpscaler',
+    modelName: 'fal-ai/creative-upscaler',
     modelType: 'img2img',
   },
 ];
