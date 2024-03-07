@@ -7,7 +7,7 @@ import {
 } from '../../types/uploadPictureResponseTypes';
 import * as falClient from '@fal-ai/serverless-client';
 import { Models } from '../../constants/models';
-import ImageHistoryModel from 'models/ai-image-models-schema/imageModel.mongo';
+import ImageHistoryModel from '../../models/ai-image-models-schema/imageModel.mongo';
 
 falClient.config({
   credentials: process.env.FAL_API_KEY,
