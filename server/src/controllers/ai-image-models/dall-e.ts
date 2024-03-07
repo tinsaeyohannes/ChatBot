@@ -32,6 +32,7 @@ const generateImage = async (req: Request, res: Response) => {
       const newChat = new ImageHistoryModel({
         chatName: prompt,
         modelName: 'dalle',
+        modelType: 'txt2img',
         history: [
           {
             sender: 'user',
