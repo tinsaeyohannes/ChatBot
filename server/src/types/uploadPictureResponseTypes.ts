@@ -9,6 +9,7 @@ export type FalResponseImage = {
   url: string;
   width: number;
 };
+
 export type FalResponseTypes = {
   has_nsfw_concepts: boolean[];
   images: FalResponseImage[];
@@ -17,6 +18,7 @@ export type FalResponseTypes = {
     inference: number;
   };
 };
+
 export type FalResponseTypes2 = {
   image: {
     height: number;

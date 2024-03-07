@@ -13,3 +13,17 @@ export interface ConversationHistoryDocument extends Document {
   botName: string;
   history: ConversationTurn[];
 }
+
+export interface ImageTypes {
+  sender: string;
+  prompt?: string;
+  original_Image?: string;
+  generated_Image: string;
+}
+
+export interface ImagesHistory {
+  _id?: ObjectId;
+  chatName: string;
+  modelName: string;
+  history: ImageTypes[];
+}
