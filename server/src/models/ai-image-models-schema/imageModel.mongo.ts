@@ -10,6 +10,9 @@ const ImageHistorySchema: Schema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    modelType: {
+      type: String,
+    },
     history: [
       {
         sender: {
