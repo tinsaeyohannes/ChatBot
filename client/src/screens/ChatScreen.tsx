@@ -186,6 +186,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
           colors={['#03130F00', '#081814', '#03130F']}>
           <View style={styles.chatInputContainer}>
             <TextInput
+              value={userMessage}
               placeholder="Message"
               placeholderTextColor={isDarkMode ? 'white' : 'black'}
               style={styles.inputField}
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: hp(2.5),
-    fontFamily: 'Open-Sans',
+    fontFamily: 'open-sans',
     width: wp(75),
     color: '#E5E5E5',
   },
