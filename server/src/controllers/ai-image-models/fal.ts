@@ -123,7 +123,7 @@ const generateWithFal = async (req: Request, res: Response) => {
   }
 };
 
-const continueWithfal = async (req: Request, res: Response) => {
+const continueWithFal = async (req: Request, res: Response) => {
   const {
     chatId,
     image,
@@ -237,4 +237,4 @@ const continueWithfal = async (req: Request, res: Response) => {
   }
 };
 
-export { generateWithFal, continueWithfal };
+export { generateWithFal, continueWithFal };
