@@ -1,6 +1,7 @@
 import React, {type FC} from 'react';
 import {
   Button,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -55,6 +56,8 @@ const ProfileScreen: FC<ProfileScreenProps> = ({
           }}
         />
       </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollViewContainer}></ScrollView>
     </SafeAreaView>
   );
 };
@@ -63,6 +66,7 @@ const styles = StyleSheet.create({
   safeAreaViewContainer: {
     flex: 1,
   },
+
   darkBg: {
     backgroundColor: '#031C1A',
   },
@@ -83,6 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: '#006570',
   },
+  scrollViewContainer: {},
 });
 
 export default React.memo(ProfileScreen);
