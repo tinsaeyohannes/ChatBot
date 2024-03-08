@@ -14,12 +14,6 @@ export type ChatStoreActionTypes = {
     scrollRef: React.MutableRefObject<ScrollView | null>,
     alert: (_data: DropdownAlertData) => Promise<DropdownAlertData>,
   ) => Promise<void>;
-  continueChat: (
-    userMessage: ChatConversationTypes,
-    setMessages: React.Dispatch<React.SetStateAction<string>>,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-    id: string,
-  ) => Promise<() => void>;
   getChatHistory: () => Promise<void>;
   getChatById: (id: string) => Promise<void>;
   deleteChat: (id: string) => Promise<void>;
