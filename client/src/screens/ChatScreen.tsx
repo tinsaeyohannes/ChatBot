@@ -28,6 +28,8 @@ import DropdownAlert, {
   type DropdownAlertData,
 } from 'react-native-dropdownalert';
 import LinearGradient from 'react-native-linear-gradient';
+import {formatDate} from '../helper/formatDate';
+import {format} from 'date-fns';
 // import {SERVER_API_KEY, BASE_URL} from '@env';
 // import RNEventSource from 'react-native-event-source';
 
@@ -159,6 +161,12 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   <Text selectable style={styles.message}>
                     {message.message}
                   </Text>
+                  <Text style={styles.date}>
+                    {format(
+                      userChat?.createdAt || new Date(),
+                      'yyyy-MM-dd HH:mm:ss',
+                    )}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -281,6 +289,12 @@ const styles = StyleSheet.create({
     fontFamily: 'open-sans',
     width: wp(75),
     color: '#E5E5E5',
+  },
+  date: {
+    fontSize: hp(1.5),
+    fontFamily: 'open-sans',
+    width: wp(75),
+    color: 'gray',
   },
   linearGradient: {
     position: 'absolute',
