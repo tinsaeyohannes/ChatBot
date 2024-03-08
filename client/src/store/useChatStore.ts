@@ -26,6 +26,7 @@ export const useChatStore = create(
         _id: '',
         history: [],
         chatName: '',
+        createdAt: new Date(),
       },
 
       newChat: async (userMessage, setLoading, id, scrollRef, alert) => {
