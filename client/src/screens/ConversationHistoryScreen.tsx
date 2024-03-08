@@ -37,7 +37,6 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
   }));
 
   const [searchText, setSearchText] = useState<string>('');
-
   const [chatIndex, setChatIndex] = useState<number | null>(0);
   const [updatedConversationHistory, setUpdatedConversationHistory] =
     useState(conversationHistory);
@@ -100,6 +99,9 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
               } else {
                 setChatIndex(index);
               }
+            }}
+            onLongPress={() => {
+              console.log('touchedIndex - ', index);
             }}>
             <View
               style={[
@@ -122,7 +124,11 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
       />
 
       <View style={styles.profileContainer}>
-        <TouchableOpacity style={styles.profileButton}>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => {
+            navigation.navigate('Profile');
+          }}>
           <Image
             source={{uri: 'https://picsum.photos/200/300'}}
             style={styles.profileImage}
