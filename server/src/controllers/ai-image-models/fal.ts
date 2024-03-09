@@ -229,6 +229,9 @@ const continueWithFal = async (req: Request, res: Response) => {
             .status(500)
             .json({ error: 'No images returned from the AI model' });
         }
+      } else {
+        res.status(500).json({ error: 'Model not found' });
+        return;
       }
     }
   } catch (error) {
