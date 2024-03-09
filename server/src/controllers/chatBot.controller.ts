@@ -6,6 +6,9 @@ import GeminiHistoryModel from '../models/ai-chat-models-schema/geminiHistoryMod
 
 const getAllChatHistory = async (req: Request, res: Response) => {
   const model = req.query.model;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
 
   console.log('model', model);
 
@@ -20,7 +23,10 @@ const getAllChatHistory = async (req: Request, res: Response) => {
     let allChats: ConversationHistoryDocument[] = [];
 
     if (model === 'openai') {
-      allChats = await OpenAiHistoryModel.find().sort({ createdAt: -1 }); // Sort by createdAt in descending order
+      allChats = await OpenAiHistoryModel.find()
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }); // Sort by createdAt in descending order
     } else if (model === 'gemini') {
       allChats = await GeminiHistoryModel.find().sort({ createdAt: -1 });
     }
