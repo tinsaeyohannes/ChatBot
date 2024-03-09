@@ -3,6 +3,9 @@ import ImageHistoryModel from '../models/ai-image-models-schema/imageModel.mongo
 
 const getAllImageHistories = async (req: Request, res: Response) => {
   const model = req.query.model;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
 
   console.log('model', model);
 
@@ -14,7 +17,7 @@ const getAllImageHistories = async (req: Request, res: Response) => {
   // }
 
   try {
-    const imageHistory = await ImageHistoryModel.find();
+    const imageHistory = await ImageHistoryModel.find().skip(skip).limit(limit);
 
     if (!imageHistory) {
       res.status(404).json({
