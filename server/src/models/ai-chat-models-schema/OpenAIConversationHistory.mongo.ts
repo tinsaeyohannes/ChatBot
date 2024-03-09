@@ -20,9 +20,7 @@ const OpenAIHistorySchema: Schema = new mongoose.Schema(
           type: String || null,
           required: true,
         },
-        translatedMessage: {
-          type: String,
-        },
+    
       },
     ],
   },
