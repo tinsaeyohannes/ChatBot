@@ -22,7 +22,7 @@ const CohereHistorySchema: Schema = new mongoose.Schema(
         },
         createdAt: {
           type: Date,
-          default: Date.UTC,
+          default: Date.now,
         },
       },
     ],

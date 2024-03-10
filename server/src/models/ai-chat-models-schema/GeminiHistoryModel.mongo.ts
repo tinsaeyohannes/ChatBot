@@ -20,6 +20,10 @@ const GeminiHistorySchema: Schema = new mongoose.Schema(
           type: String || null,
           required: true,
         },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
   },
