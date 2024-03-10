@@ -28,6 +28,7 @@ export const useChatStore = create(
         _id: '',
         history: [],
         chatName: '',
+        botName: '',
         createdAt: new Date(),
       },
 
@@ -129,12 +130,12 @@ export const useChatStore = create(
         }
       },
 
-      getChatHistory: async () => {
+      getChatHistory: async model => {
         console.log('getChatHistory called');
         try {
           const {data} = await axios({
             method: 'GET',
-            url: '/all?model=openai',
+            url: `/all?model=${model}`,
             headers: {
               Accept: 'application/json',
               'Content-Type': 'application/json',
@@ -146,16 +147,6 @@ export const useChatStore = create(
             conversationHistory:
               data as ChatStoreStateTypes['conversationHistory'],
           });
-
-          // const response = await fetch(`${BASE_URL}/all`, {
-          //   method: 'GET',
-          //   headers: {
-          //     'Content-Type': 'application/json',
-          //     Authorization: `Bearer ${SERVER_API_KEY}`,
-          //   },
-          // });
-
-          // const data = await response.json();
         } catch (error) {
           console.error(error);
         }
