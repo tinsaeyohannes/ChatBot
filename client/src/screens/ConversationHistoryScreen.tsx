@@ -19,6 +19,9 @@ import {useChatStore} from '../store/useChatStore';
 import type {DrawerNavigationHelpers} from '@react-navigation/drawer/lib/typescript/src/types';
 import {truncateString} from '../helper/truncateString';
 import {formatDate} from '../helper/formatDate';
+import ChatGptIcon from '../assets/icons/chatgpt-icon.svg';
+import CohereIcon from '../assets/icons/cohere-icon.svg';
+import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
 
 type ConversationHistoryScreenProps = {
   navigation: DrawerNavigationHelpers;
@@ -41,7 +44,6 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
 
   const [searchText, setSearchText] = useState<string>('');
   const [chatIndex, setChatIndex] = useState<number | null>(0);
-
   const [updatedConversationHistory, setUpdatedConversationHistory] =
     useState(conversationHistory);
 
@@ -87,13 +89,14 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
             onChangeText={setSearchText}
           />
         </View>
-        <View>
+        <View style={styles.newChatContainer}>
           <TouchableOpacity
-            style={styles.newChatContainer}
+            style={styles.newChatButton}
             onPress={() => {
               useChatStore.setState({
                 userChat: {
                   _id: '',
+                  botName: '',
                   history: [],
                   chatName: '',
                 },
@@ -117,6 +120,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                 const chat = item;
                 useChatStore.setState({
                   userChat: {
+                    botName: '',
                     _id: '',
                     history: [],
                     chatName: '',
@@ -137,13 +141,23 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                   styles.listItemContainer,
                   chatIndex === index && styles.selectedListItem,
                 ]}>
-                <Text
-                  style={[
-                    styles.text,
-                    isDarkMode ? styles.lightText : styles.darkText,
-                  ]}>
-                  {truncateString(item?.chatName, 28)}
-                </Text>
+                <View style={styles.listItem}>
+                  {item.botName === 'ChatGPT' ? (
+                    <ChatGptIcon width={25} height={25} />
+                  ) : item.botName === 'Cohere' ? (
+                    <CohereIcon width={24} height={24} />
+                  ) : (
+                    <GeminiIcon width={24} height={24} />
+                  )}
+                  <Text
+                    style={[
+                      styles.text,
+                      isDarkMode ? styles.lightText : styles.darkText,
+                    ]}>
+                    {truncateString(item?.chatName, 28)}
+                  </Text>
+                </View>
+
                 <Text style={[styles.dateText]}>
                   {item.createdAt ? formatDate(item.createdAt) : ''} ago
                 </Text>
@@ -195,6 +209,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     marginHorizontal: 10,
   },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   text: {
     fontSize: hp(2.2),
     width: '95%',
@@ -230,6 +249,9 @@ const styles = StyleSheet.create({
     width: wp(60),
   },
   newChatContainer: {
+    paddingBottom: 10,
+  },
+  newChatButton: {
     backgroundColor: '#292929',
     borderRadius: 15,
     marginHorizontal: 10,
