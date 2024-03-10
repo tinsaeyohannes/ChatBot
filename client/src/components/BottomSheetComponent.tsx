@@ -1,5 +1,11 @@
 import React, {FC} from 'react';
-import {Text, StyleSheet, View, TouchableOpacity} from 'react-native';
+import {
+  Text,
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 
 import {
   BottomSheetBackdrop,
@@ -13,6 +19,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {BottomSheetDefaultBackdropProps} from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types';
+import {ImageModels} from '../constants/ImageModels';
 
 type ImageUploadBottomSheetProps = {
   snapPoints: string[];
@@ -59,51 +66,28 @@ const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
           contentContainerStyle={styles.contentContainer}>
           <View>
             <Text>Text Models</Text>
-            <TouchableOpacity>
+            <TouchableOpacity style={styles.imageModels}>
               <Text>Chat GPT</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity style={styles.imageModels}>
               <Text>Gemini</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity style={styles.imageModels}>
               <Text>Cohere</Text>
             </TouchableOpacity>
           </View>
           <View>
             <Text>Image Models</Text>
-            <TouchableOpacity>
-              <Text>DALL-E</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Stable Diffusion XL Lightning</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Fast Image</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Stable DiffusionXL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Stable Cascade</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Esrgan Upscale</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Supir Upscaler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>CCSRUpscaler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Face Retoucher</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Creative Upscaler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text>Remove Background</Text>
-            </TouchableOpacity>
+            {ImageModels.map(model => (
+              <TouchableOpacity key={model.id} style={styles.imageModels}>
+                <Text style={styles.modelName}>{model.name}</Text>
+                {model.modelType === 'txt2img' ? (
+                  <Text> Text To Image</Text>
+                ) : (
+                  <Text>Image To Image</Text>
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
         </BottomSheetScrollView>
       </BottomSheetModal>
@@ -159,6 +143,18 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: 'bold',
     color: '#fff',
+  },
+  imageModels: {
+    margin: 10,
+    backgroundColor: 'rgba(3,19,15, 0.2)',
+    width: Dimensions.get('window').width - 20,
+    height: hp(15),
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modelName: {
+    fontSize: hp(4),
   },
 });
 
