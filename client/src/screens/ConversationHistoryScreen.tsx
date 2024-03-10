@@ -31,13 +31,17 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
 
-  const {conversationHistory, userChat} = useChatStore(state => ({
-    conversationHistory: state.conversationHistory,
-    userChat: state.userChat,
-  }));
+  const {conversationHistory, userChat, setUserMessage} = useChatStore(
+    state => ({
+      conversationHistory: state.conversationHistory,
+      userChat: state.userChat,
+      setUserMessage: state.setUserMessage,
+    }),
+  );
 
   const [searchText, setSearchText] = useState<string>('');
   const [chatIndex, setChatIndex] = useState<number | null>(0);
+
   const [updatedConversationHistory, setUpdatedConversationHistory] =
     useState(conversationHistory);
 
@@ -59,6 +63,13 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     }
   }, [conversationHistory, searchText]);
 
+  const showMoreButton = () => {
+    return (
+      <TouchableOpacity style={styles.showMoreButton}>
+        <Text style={styles.showMoreButtonText}>Show More</Text>
+      </TouchableOpacity>
+    );
+  };
   return (
     <View style={styles.safeAreaViewContainer}>
       <StatusBar
@@ -76,16 +87,10 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
             onChangeText={setSearchText}
           />
         </View>
-      </View>
-
-      <FlatList
-        data={updatedConversationHistory || []}
-        showsVerticalScrollIndicator={false}
-        keyExtractor={item => item._id}
-        renderItem={({item, index}) => (
+        <View>
           <TouchableOpacity
+            style={styles.newChatContainer}
             onPress={() => {
-              const chat = item;
               useChatStore.setState({
                 userChat: {
                   _id: '',
@@ -93,34 +98,62 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                   chatName: '',
                 },
               });
-              navigation.navigate('Chat', {chat});
-              if (!userChat) {
-                setChatIndex(null);
-              } else {
-                setChatIndex(index);
-              }
-            }}
-            onLongPress={() => {
-              console.log('touchedIndex - ', index);
+              setUserMessage('');
+              navigation.navigate('Chat');
             }}>
-            <View
-              style={[
-                styles.listItemContainer,
-                chatIndex === index && styles.selectedListItem,
-              ]}>
-              <Text
-                style={[
-                  styles.text,
-                  isDarkMode ? styles.lightText : styles.darkText,
-                ]}>
-                {truncateString(item?.chatName, 28)}
-              </Text>
-              <Text style={[styles.dateText]}>
-                {item.createdAt ? formatDate(item.createdAt) : ''} ago
-              </Text>
-            </View>
+            <Text style={styles.newChat}>New Chat</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      <FlatList
+        data={updatedConversationHistory || []}
+        showsVerticalScrollIndicator={false}
+        keyExtractor={item => item._id}
+        renderItem={({item, index}) => (
+          <>
+            <TouchableOpacity
+              onPress={() => {
+                const chat = item;
+                useChatStore.setState({
+                  userChat: {
+                    _id: '',
+                    history: [],
+                    chatName: '',
+                  },
+                });
+                navigation.navigate('Chat', {chat});
+                if (!userChat) {
+                  setChatIndex(null);
+                } else {
+                  setChatIndex(index);
+                }
+              }}
+              onLongPress={() => {
+                console.log('touchedIndex - ', index);
+              }}>
+              <View
+                style={[
+                  styles.listItemContainer,
+                  chatIndex === index && styles.selectedListItem,
+                ]}>
+                <Text
+                  style={[
+                    styles.text,
+                    isDarkMode ? styles.lightText : styles.darkText,
+                  ]}>
+                  {truncateString(item?.chatName, 28)}
+                </Text>
+                <Text style={[styles.dateText]}>
+                  {item.createdAt ? formatDate(item.createdAt) : ''} ago
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </>
         )}
+        ListFooterComponent={
+          updatedConversationHistory.length > 9 ? showMoreButton : null
+        }
       />
 
       <View style={styles.profileContainer}>
@@ -155,11 +188,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   selectedListItem: {
-    backgroundColor: 'gray',
+    backgroundColor: '#4A4A4A',
     borderColor: 'gray',
     paddingVertical: 10,
     borderRadius: 10,
     paddingHorizontal: 5,
+    marginHorizontal: 10,
   },
   text: {
     fontSize: hp(2.2),
@@ -195,8 +229,33 @@ const styles = StyleSheet.create({
   inputField: {
     width: wp(60),
   },
+  newChatContainer: {
+    backgroundColor: '#292929',
+    borderRadius: 15,
+    marginHorizontal: 10,
+  },
+  newChat: {
+    fontSize: hp(2.5),
+    color: 'white',
+    fontWeight: 'bold',
+    padding: 15,
+    textAlign: 'center',
+  },
   scrollViewContainer: {
     flexGrow: 3,
+  },
+  showMoreButton: {
+    backgroundColor: '#292929',
+    borderRadius: 15,
+    marginHorizontal: 10,
+    marginVertical: 5,
+  },
+  showMoreButtonText: {
+    fontSize: hp(2),
+    color: 'white',
+    fontWeight: 'bold',
+    padding: 15,
+    textAlign: 'center',
   },
   profileContainer: {
     minHeight: 90,
