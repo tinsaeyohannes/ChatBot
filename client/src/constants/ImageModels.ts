@@ -7,22 +7,22 @@ export const ImageModels: ImageModelTypes[] = [
   {
     id: 1,
     name: 'DALL-E',
-    modelType: 'text2img',
+    modelType: 'txt2img',
   },
   {
     id: 2,
     name: 'Fast Image',
-    modelType: 'text2img',
+    modelType: 'txt2img',
   },
   {
     id: 3,
     name: 'Stable Diffusion XL Lightning',
-    modelType: 'text2img',
+    modelType: 'txt2img',
   },
   {
     id: 4,
     name: 'Stable DiffusionXL',
-    modelType: 'text2img',
+    modelType: 'txt2img',
   },
   {
     id: 5,
