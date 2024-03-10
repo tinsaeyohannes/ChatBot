@@ -1,4 +1,11 @@
-import React, {useEffect, useRef, useState, type FC} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -29,8 +36,11 @@ import DropdownAlert, {
 } from 'react-native-dropdownalert';
 import LinearGradient from 'react-native-linear-gradient';
 import {format} from 'date-fns';
-// import {SERVER_API_KEY, BASE_URL} from '@env';
-// import RNEventSource from 'react-native-event-source';
+import ChatGptIcon from '../assets/icons/chatgpt-icon.svg';
+import CohereIcon from '../assets/icons/cohere-icon.svg';
+import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
+import BottomSheetComponent from '../components/BottomSheetComponent';
+import type {BottomSheetModal} from '@gorhom/bottom-sheet';
 
 type ChatScreenProps = {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -90,6 +100,14 @@ const ChatScreen: FC<ChatScreenProps> = ({
     }
   }, [botTyping, loading]);
 
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  // variables
+  const snapPoints = useMemo(() => ['25%', '50%'], []);
+
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+  }, []);
   return (
     <SafeAreaView
       style={[
@@ -117,7 +135,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
               : null}
           </Text>
 
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handlePresentModalPress}>
             <AntDesign
               name="appstore-o"
               size={24}
@@ -135,29 +155,30 @@ const ChatScreen: FC<ChatScreenProps> = ({
             userChat.history.map(message => (
               <View style={styles.messageContainer} key={message._id}>
                 <View style={styles.senderPicContainer}>
-                  <Image
-                    source={
-                      message.sender === 'user'
-                        ? {
-                            uri: 'https://i.pravatar.cc/300',
-                          }
-                        : require('../assets/icons/ai.png')
-                    }
-                    style={styles.senderPic}
-                  />
+                  {message.sender === 'user' ? (
+                    <Image
+                      source={{
+                        uri: 'https://i.pravatar.cc/300',
+                      }}
+                      style={styles.senderPic}
+                    />
+                  ) : userChat.botName === 'ChatGPT' ? (
+                    <ChatGptIcon />
+                  ) : userChat.botName === 'Cohere' ? (
+                    <CohereIcon />
+                  ) : (
+                    <GeminiIcon />
+                  )}
                 </View>
                 <View>
                   <Text style={styles.senderName}>
-                    {message.sender === 'user' ? 'You' : 'AI'}
+                    {message.sender === 'user' ? 'You' : userChat?.botName}
                   </Text>
                   <Text selectable style={styles.message}>
                     {message.message}
                   </Text>
                   <Text style={styles.date}>
-                    {format(
-                      userChat?.createdAt || new Date(),
-                      'yyyy-MM-dd HH:mm:ss',
-                    )}
+                    {format(message.createdAt, 'mm:ss')}
                   </Text>
                 </View>
               </View>
@@ -217,6 +238,11 @@ const ChatScreen: FC<ChatScreenProps> = ({
         </LinearGradient>
       </View>
       <DropdownAlert alert={func => (alert = func)} />
+      <BottomSheetComponent
+        bottomSheetModalRef={bottomSheetModalRef}
+        snapPoints={snapPoints}
+        handlePresentModalPress={handlePresentModalPress}
+      />
     </SafeAreaView>
   );
 };
@@ -265,7 +291,7 @@ const styles = StyleSheet.create({
   senderPic: {
     aspectRatio: 16 / 9,
     width: hp(5),
-    // height: hp(5),
+    height: hp(5),
     borderRadius: 50,
   },
 
@@ -284,10 +310,11 @@ const styles = StyleSheet.create({
     color: '#E5E5E5',
   },
   date: {
-    fontSize: hp(1.5),
+    fontSize: hp(1.8),
     fontFamily: 'open-sans',
     width: wp(75),
     color: 'gray',
+    textAlign: 'right',
   },
   linearGradient: {
     position: 'absolute',
