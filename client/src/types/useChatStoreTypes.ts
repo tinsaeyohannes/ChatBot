@@ -16,7 +16,7 @@ export type ChatStoreActionTypes = {
     scrollRef: React.MutableRefObject<ScrollView | null>,
     alert: (_data: DropdownAlertData) => Promise<DropdownAlertData>,
   ) => Promise<void>;
-  getChatHistory: () => Promise<void>;
+  getChatHistory: (model: string) => Promise<void>;
   getChatById: (id: string) => Promise<void>;
   deleteChat: (id: string) => Promise<void>;
 };
@@ -25,13 +25,14 @@ export type ChatConversationTypes = {
   _id?: string;
   sender: string;
   message: string;
-  translatedMessage?: string;
+  createdAt: string;
 };
 
 export type ChatHistoryTypes = {
   __v?: number;
   _id: string;
   chatName: string;
+  botName: string;
   history: ChatConversationTypes[];
   createdAt?: Date;
   updatedAt?: Date;
