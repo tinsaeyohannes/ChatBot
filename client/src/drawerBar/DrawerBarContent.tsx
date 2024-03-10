@@ -21,7 +21,7 @@ const DrawerBarContent: FC<DrawerBarContentProps> = ({
   }));
 
   useEffect(() => {
-    getChatHistory();
+    getChatHistory('cohere');
   }, [getChatHistory]);
 
   return (
