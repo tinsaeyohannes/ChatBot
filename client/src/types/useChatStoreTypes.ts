@@ -3,10 +3,12 @@ import type {DropdownAlertData} from 'react-native-dropdownalert';
 
 export type ChatStoreStateTypes = {
   conversationHistory: ChatHistoryTypes[];
+  userMessage: string;
   userChat: ChatHistoryTypes;
 };
 
 export type ChatStoreActionTypes = {
+  setUserMessage: (message: string) => void;
   newChat: (
     userMessage: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
