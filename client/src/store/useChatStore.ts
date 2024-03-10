@@ -22,6 +22,8 @@ export const useChatStore = create(
   persist<ChatStoreStateTypes & ChatStoreActionTypes>(
     (set, get) => ({
       conversationHistory: [],
+      userMessage: '',
+      setUserMessage: (message: string) => set({userMessage: message}),
       userChat: {
         _id: '',
         history: [],
