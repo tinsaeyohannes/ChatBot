@@ -28,7 +28,6 @@ import DropdownAlert, {
   type DropdownAlertData,
 } from 'react-native-dropdownalert';
 import LinearGradient from 'react-native-linear-gradient';
-import {formatDate} from '../helper/formatDate';
 import {format} from 'date-fns';
 // import {SERVER_API_KEY, BASE_URL} from '@env';
 // import RNEventSource from 'react-native-event-source';
@@ -47,11 +46,15 @@ const ChatScreen: FC<ChatScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
   const scrollRef = useRef<ScrollView | null>(null);
-  const {newChat, userChat} = useChatStore(state => ({
-    newChat: state.newChat,
-    userChat: state.userChat,
-  }));
-  const [userMessage, setUserMessage] = useState<string>('');
+  const {newChat, userChat, userMessage, setUserMessage} = useChatStore(
+    state => ({
+      newChat: state.newChat,
+      userChat: state.userChat,
+      userMessage: state.userMessage,
+      setUserMessage: state.setUserMessage,
+    }),
+  );
+
   const [loading, setLoading] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
   useEffect(() => {
@@ -114,20 +117,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
               : null}
           </Text>
 
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => {
-              useChatStore.setState({
-                userChat: {
-                  _id: '',
-                  history: [],
-                  chatName: '',
-                },
-              });
-              setUserMessage('');
-            }}>
-            <Feather
-              name="plus"
+          <TouchableOpacity style={styles.headerButton}>
+            <AntDesign
+              name="appstore-o"
               size={24}
               color={isDarkMode ? 'white' : 'black'}
             />
@@ -194,7 +186,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
           colors={['#03130F00', '#081814', '#03130F']}>
           <View style={styles.chatInputContainer}>
             <TextInput
-              value={userMessage}
               placeholder="Message"
               placeholderTextColor={isDarkMode ? 'white' : 'black'}
               style={styles.inputField}
@@ -270,9 +261,11 @@ const styles = StyleSheet.create({
     margin: hp(1.5),
     overflow: 'hidden',
   },
+
   senderPic: {
+    aspectRatio: 16 / 9,
     width: hp(5),
-    height: hp(5),
+    // height: hp(5),
     borderRadius: 50,
   },
 
