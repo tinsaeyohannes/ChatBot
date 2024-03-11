@@ -5,6 +5,7 @@ export type ChatStoreStateTypes = {
   conversationHistory: ChatHistoryTypes[];
   userMessage: string;
   userChat: ChatHistoryTypes;
+  currentModel: string;
 };
 
 export type ChatStoreActionTypes = {
@@ -19,6 +20,7 @@ export type ChatStoreActionTypes = {
   getChatHistory: (model: string) => Promise<void>;
   getChatById: (id: string) => Promise<void>;
   deleteChat: (id: string) => Promise<void>;
+  emptyUserChat: () => void;
 };
 
 export type ChatConversationTypes = {
