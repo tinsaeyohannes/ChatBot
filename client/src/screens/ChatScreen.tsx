@@ -16,6 +16,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {userStore} from '../store/useStore';
@@ -56,14 +57,14 @@ const ChatScreen: FC<ChatScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
   const scrollRef = useRef<ScrollView | null>(null);
-  const {newChat, userChat, userMessage, setUserMessage} = useChatStore(
-    state => ({
+  const {newChat, userChat, userMessage, setUserMessage, currentModel} =
+    useChatStore(state => ({
       newChat: state.newChat,
       userChat: state.userChat,
       userMessage: state.userMessage,
       setUserMessage: state.setUserMessage,
-    }),
-  );
+      currentModel: state.currentModel,
+    }));
 
   const [loading, setLoading] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
@@ -106,6 +107,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
   const snapPoints = useMemo(() => ['25%', '50%'], []);
 
   const handlePresentModalPress = useCallback(() => {
+    Keyboard.dismiss();
     bottomSheetModalRef.current?.present();
   }, []);
   return (
@@ -178,7 +180,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
                     {message.message}
                   </Text>
                   <Text style={styles.date}>
-                    {format(message.createdAt, 'mm:ss')}
+                    {message.createdAt
+                      ? format(message?.createdAt, 'mm:ss')
+                      : format(new Date(), 'mm:ss')}
                   </Text>
                 </View>
               </View>
@@ -186,10 +190,13 @@ const ChatScreen: FC<ChatScreenProps> = ({
           {botTyping && (
             <View style={styles.messageContainer}>
               <View style={styles.senderPicContainer}>
-                <Image
-                  source={require('../assets/icons/ai.png')}
-                  style={styles.senderPic}
-                />
+                {currentModel === 'openai' ? (
+                  <ChatGptIcon width={35} height={35} />
+                ) : currentModel === 'cohere' ? (
+                  <CohereIcon width={35} height={35} />
+                ) : (
+                  <GeminiIcon width={35} height={35} />
+                )}
               </View>
               <View>
                 <Text style={styles.senderName}>AI</Text>
@@ -239,6 +246,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
       </View>
       <DropdownAlert alert={func => (alert = func)} />
       <BottomSheetComponent
+        navigation={navigation}
         bottomSheetModalRef={bottomSheetModalRef}
         snapPoints={snapPoints}
         handlePresentModalPress={handlePresentModalPress}
