@@ -19,6 +19,7 @@ export interface ImageTypes {
   prompt?: string;
   original_Image?: string;
   generated_Image?: string;
+  createdAt: Date;
 }
 
 export interface ImagesHistory {
@@ -26,5 +27,6 @@ export interface ImagesHistory {
   chatName: string;
   modelName: string;
   modelType?: string;
+  provider: string;
   history: ImageTypes[];
 }
