@@ -92,9 +92,9 @@ function App() {
             name="Image"
             component={ImageGenerateScreen}
             options={{
-              swipeEnabled: false,
+              swipeEnabled: true,
               headerShown: false,
-              drawerLabel: 'Profile',
+              drawerLabel: 'Images',
             }}
           />
         </Drawer.Navigator>
