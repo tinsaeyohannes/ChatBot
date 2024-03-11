@@ -50,6 +50,7 @@ const generateWithFal = async (req: Request, res: Response) => {
         const newChat = new ImageHistoryModel({
           chatName: prompt,
           modelName: m.label,
+          provider: 'fal',
           modelType: m.modelType,
           history: [
             {
@@ -60,6 +61,7 @@ const generateWithFal = async (req: Request, res: Response) => {
         });
 
         newChat.history.push({
+          createdAt: new Date(),
           sender: 'model',
           generated_Image: falResponse.images[0].url,
         });
@@ -72,17 +74,27 @@ const generateWithFal = async (req: Request, res: Response) => {
           updatedImage,
         )) as UploadPictureResponse;
 
-        const falResponse: FalResponseTypes & FalResponseTypes2 =
-          await falClient.subscribe(m.modelName, {
+        let falResponse: FalResponseTypes & FalResponseTypes2;
+        if (m.imgUrlInput === 'face_image_url') {
+          falResponse = await falClient.subscribe(m.modelName, {
+            input: {
+              face_image_url: secureUrl,
+              prompt: prompt,
+            },
+          });
+        } else {
+          falResponse = await falClient.subscribe(m.modelName, {
             input: {
               image_url: secureUrl,
               prompt: prompt,
             },
           });
+        }
 
         const newChat = new ImageHistoryModel({
           chatName: prompt,
           modelName: m.label,
+          provider: 'fal',
           modelType: m.modelType,
           history: [
             {
@@ -96,6 +108,8 @@ const generateWithFal = async (req: Request, res: Response) => {
           newChat.history.push({
             sender: 'model',
             generated_Image: falResponse.images[0].url,
+            original_Image: secureUrl,
+            createdAt: new Date(),
           });
 
           const response = await newChat.save();
@@ -105,6 +119,8 @@ const generateWithFal = async (req: Request, res: Response) => {
           newChat.history.push({
             sender: 'model',
             generated_Image: falResponse.image.url,
+            original_Image: secureUrl,
+            createdAt: new Date(),
           });
 
           const response = await newChat.save();
@@ -169,11 +185,13 @@ const continueWithFal = async (req: Request, res: Response) => {
         chat.history.push({
           sender: 'user',
           prompt: prompt,
+          createdAt: new Date(),
         });
 
         chat.history.push({
           sender: 'model',
           generated_Image: falResponse.images[0].url,
+          createdAt: new Date(),
         });
 
         const response = await chat.save();
@@ -195,11 +213,14 @@ const continueWithFal = async (req: Request, res: Response) => {
         chat.history.push({
           sender: 'user',
           prompt: prompt,
+          createdAt: new Date(),
         });
 
         chat.history.push({
           sender: 'model',
           generated_Image: falResponse.images[0].url,
+          original_Image: secureUrl,
+          createdAt: new Date(),
         });
 
         const response = await chat.save();
@@ -209,6 +230,8 @@ const continueWithFal = async (req: Request, res: Response) => {
           chat.history.push({
             sender: 'model',
             generated_Image: falResponse.images[0].url,
+            original_Image: secureUrl,
+            createdAt: new Date(),
           });
 
           const response = await chat.save();
@@ -218,11 +241,12 @@ const continueWithFal = async (req: Request, res: Response) => {
           chat.history.push({
             sender: 'model',
             generated_Image: falResponse.image.url,
+            original_Image: secureUrl,
+            createdAt: new Date(),
           });
 
           const response = await chat.save();
           res.status(200).json(response);
-
           return;
         } else {
           res
