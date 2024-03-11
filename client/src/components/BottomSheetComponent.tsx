@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 
 import {
@@ -20,11 +21,21 @@ import {
 } from 'react-native-responsive-screen';
 import {BottomSheetDefaultBackdropProps} from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types';
 import {ImageModels} from '../constants/ImageModels';
+import {TextModel} from '../constants/TextModels';
+import ChatGptIcon from '../assets/icons/chatgpt-icon.svg';
+import CohereIcon from '../assets/icons/cohere-icon.svg';
+import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
+// import AntDesign from 'react-native-vector-icons/AntDesign';
+import {useChatStore} from '../store/useChatStore';
+import type {DrawerNavigationProp} from '@react-navigation/drawer';
+import type {ParamListBase} from '@react-navigation/native';
+import {useImageStore} from '../store/useImageStore';
 
 type ImageUploadBottomSheetProps = {
   snapPoints: string[];
   handlePresentModalPress: () => void;
   bottomSheetModalRef: React.RefObject<BottomSheetModal>;
+  navigation: DrawerNavigationProp<ParamListBase>;
 };
 
 const CustomBackdrop = (
@@ -44,8 +55,15 @@ const CustomBackdrop = (
 
 const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
   bottomSheetModalRef,
+  navigation,
 }): React.JSX.Element => {
-  // Render the component
+  const {getChatHistory, emptyUserChat} = useChatStore(state => ({
+    getChatHistory: state.getChatHistory,
+    emptyUserChat: state.emptyUserChat,
+  }));
+  const {getAllImageHistories} = useImageStore(state => ({
+    getAllImageHistories: state.getAllImageHistories,
+  }));
   return (
     <BottomSheetModalProvider>
       <BottomSheetModal
@@ -65,27 +83,60 @@ const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}>
           <View>
-            <Text>Text Models</Text>
-            <TouchableOpacity style={styles.imageModels}>
-              <Text>Chat GPT</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.imageModels}>
-              <Text>Gemini</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.imageModels}>
-              <Text>Cohere</Text>
-            </TouchableOpacity>
+            <Text style={styles.modelTitle}>Text Models</Text>
+            {TextModel.map(model => (
+              <TouchableOpacity
+                key={model.id}
+                style={styles.imageModels}
+                onPress={async () => {
+                  emptyUserChat();
+                  bottomSheetModalRef.current?.dismiss();
+                  useChatStore.setState({currentModel: model.endPoint});
+                  getChatHistory(model.endPoint);
+                }}>
+                {model.name === 'ChatGPT' ? (
+                  <ChatGptIcon width={45} height={45} />
+                ) : model.name === 'Cohere' ? (
+                  <CohereIcon width={45} height={45} />
+                ) : (
+                  <GeminiIcon width={45} height={45} />
+                )}
+                <View style={styles.modelInfo}>
+                  <Text style={styles.modelName}>{model.name}</Text>
+                  <Text style={styles.modelType}>{model.modelType}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
           <View>
-            <Text>Image Models</Text>
+            <Text style={styles.modelTitle}>Image Models</Text>
             {ImageModels.map(model => (
-              <TouchableOpacity key={model.id} style={styles.imageModels}>
-                <Text style={styles.modelName}>{model.name}</Text>
-                {model.modelType === 'txt2img' ? (
-                  <Text> Text To Image</Text>
-                ) : (
-                  <Text>Image To Image</Text>
-                )}
+              <TouchableOpacity
+                key={model.id}
+                style={styles.imageModels}
+                onPress={() => {
+                  emptyUserChat();
+                  bottomSheetModalRef.current?.dismiss();
+                  useChatStore.setState({currentModel: model.provider});
+                  useImageStore.setState({currentModel: model.provider});
+                  navigation.navigate('Image');
+                  getAllImageHistories();
+                }}>
+                <ImageBackground
+                  resizeMode="contain"
+                  style={styles.modelBg}
+                  source={{uri: model.backgroundImage}}>
+                  <View style={styles.modelType}>
+                    <Text style={styles.modelName}>{model.name}</Text>
+                  </View>
+                  <View style={styles.modelType}>
+                    {model.modelType === 'txt2img' ? (
+                      <Text style={styles.modelTypeText}> Text To Image</Text>
+                    ) : (
+                      <Text style={styles.modelTypeText}>Image To Image</Text>
+                    )}
+                  </View>
+                </ImageBackground>
               </TouchableOpacity>
             ))}
           </View>
@@ -107,7 +158,7 @@ const styles = StyleSheet.create({
     height: hp(0.6),
   },
   bottomSheetBackground: {
-    backgroundColor: '#35423f',
+    backgroundColor: '#101010',
     borderRadius: 20,
   },
   title: {
@@ -146,16 +197,52 @@ const styles = StyleSheet.create({
   },
   imageModels: {
     margin: 10,
-    backgroundColor: 'rgba(3,19,15, 0.2)',
+    backgroundColor: 'rgba(75,255,75, 0.2)',
     width: Dimensions.get('window').width - 20,
-    height: hp(15),
+    height: hp(12),
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    flexDirection: 'row',
+    gap: 10,
   },
+  modelTitle: {
+    fontSize: hp(3),
+    fontWeight: 'bold',
+    color: '#fff',
+    margin: 10,
+  },
+  modelBg: {
+    width: Dimensions.get('window').width - 20,
+    height: hp(105),
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modelInfo: {},
   modelName: {
-    fontSize: hp(4),
+    fontSize: hp(3),
+    color: '#fff',
+    fontWeight: 'bold',
+    fontFamily: 'Manrope-Bold',
+  },
+  modelType: {
+    padding: 5,
+    backgroundColor: 'rgba(3,19,15, 0.3)',
+    borderRadius: 10,
+    textAlign: 'center',
+  },
+  modelTypeText: {
+    color: '#fff',
+  },
+  absolute: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
   },
 });
 
-export default BottomSheetComponent;
+export default React.memo(BottomSheetComponent);
