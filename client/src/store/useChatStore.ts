@@ -31,9 +31,18 @@ export const useChatStore = create(
         botName: '',
         createdAt: new Date(),
       },
+      currentModel: '',
 
       newChat: async (userMessage, setLoading, id, scrollRef, alert) => {
-        const {conversationHistory, userChat} = get();
+        const {conversationHistory, userChat, currentModel} = get();
+        if (!currentModel) {
+          await alert({
+            type: DropdownAlertType.Info,
+            title: 'INFO',
+            message: 'Please select a model.',
+          });
+          return;
+        }
         if (!userMessage) {
           await alert({
             type: DropdownAlertType.Info,
@@ -65,7 +74,7 @@ export const useChatStore = create(
 
           setLoading(true);
 
-          const response = await fetch(`${BASE_URL}/openai/${url}`, {
+          const response = await fetch(`${BASE_URL}/${currentModel}/${url}`, {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${SERVER_API_KEY}`,
@@ -74,8 +83,8 @@ export const useChatStore = create(
 
             method: 'POST',
             body: JSON.stringify({
-              id: id,
-              message: userMessage,
+              chatId: id,
+              prompt: userMessage,
             }),
           });
 
@@ -164,6 +173,16 @@ export const useChatStore = create(
         } catch (error) {
           console.error(error);
         }
+      },
+      emptyUserChat: () => {
+        set({
+          userChat: {
+            _id: '',
+            botName: '',
+            history: [],
+            chatName: '',
+          },
+        });
       },
     }),
     {
