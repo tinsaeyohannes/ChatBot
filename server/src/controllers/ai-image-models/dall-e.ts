@@ -31,7 +31,8 @@ const generateImage = async (req: Request, res: Response) => {
     if (imageData) {
       const newChat = new ImageHistoryModel({
         chatName: prompt,
-        modelName: 'dalle',
+        modelName: 'DALL-E',
+        provider: 'openai',
         modelType: 'txt2img',
         history: [
           {
@@ -44,6 +45,7 @@ const generateImage = async (req: Request, res: Response) => {
       newChat.history.push({
         sender: 'model',
         generated_Image: imageData,
+        createdAt: new Date(),
       });
 
       const response = await newChat.save();
@@ -98,11 +100,13 @@ const continueToGenerateImages = async (req: Request, res: Response) => {
       chat.history.push({
         sender: 'user',
         prompt: prompt,
+        createdAt: new Date(),
       });
 
       chat.history.push({
         sender: 'model',
         generated_Image: imageData,
+        createdAt: new Date(),
       });
 
       const response = await chat.save();
