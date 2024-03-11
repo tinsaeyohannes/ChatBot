@@ -42,11 +42,11 @@ const addChatName = async (userMessage: string, botMessage: string) => {
 };
 
 const openAiNewChat = asyncHandler(async (req: Request, res: Response) => {
-  const { message }: { message: string } = req.body;
+  const { prompt }: { prompt: string } = req.body;
 
-  console.log('message', message);
-  if (!message) {
-    res.status(400).json('Please enter a message');
+  console.log('prompt', prompt);
+  if (!prompt) {
+    res.status(400).json('Please enter a prompt');
     return;
   }
 
@@ -56,7 +56,7 @@ const openAiNewChat = asyncHandler(async (req: Request, res: Response) => {
       messages: [
         {
           role: 'user',
-          content: `use expressive emojis also add a bit of some sarcastic tones when answering : ${message}`,
+          content: `use expressive emojis also add a bit of some sarcastic tones when answering : ${prompt}`,
         },
       ],
       stream: true,
@@ -66,15 +66,15 @@ const openAiNewChat = asyncHandler(async (req: Request, res: Response) => {
       .content;
 
     if (botMessage) {
-      const chatName = await addChatName(message, botMessage);
+      const chatName = await addChatName(prompt, botMessage);
 
       const newChat = new OpenAIHistoryModel({
         chatName: chatName,
-        botName: 'OpenAI',
+        botName: 'ChatGPT',
         history: [
           {
             sender: 'user',
-            message: message,
+            message: prompt,
           },
         ],
       });
@@ -126,21 +126,21 @@ const openAiNewChat = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const openAiContinueChat = asyncHandler(async (req: Request, res: Response) => {
-  const { message, id }: { message: string; id: string } = req.body;
+  const { prompt, chatId }: { prompt: string; chatId: string } = req.body;
 
-  console.log('message', message);
-  console.log('id', id);
+  console.log('prompt', prompt);
+  console.log('chatId', chatId);
 
-  if (!id) {
-    res.status(400).json('Please enter an chat id');
+  if (!chatId) {
+    res.status(400).json('Please enter an chatId');
     return;
   }
-  if (!message) {
-    res.status(400).json('Please enter a message');
+  if (!prompt) {
+    res.status(400).json('Please enter a prompt');
     return;
   }
 
-  const conversationHistory = await OpenAIHistoryModel.findById(id);
+  const conversationHistory = await OpenAIHistoryModel.findById(chatId);
 
   if (!conversationHistory) {
     res.status(404).json('Empty History!');
@@ -154,7 +154,7 @@ const openAiContinueChat = asyncHandler(async (req: Request, res: Response) => {
 
   history.push({
     role: 'user',
-    content: message,
+    content: prompt,
   });
 
   try {
@@ -173,7 +173,7 @@ const openAiContinueChat = asyncHandler(async (req: Request, res: Response) => {
     if (botMessage) {
       conversationHistory.history.push({
         sender: 'user',
-        message: message,
+        message: prompt,
       });
 
       conversationHistory.history.push({
