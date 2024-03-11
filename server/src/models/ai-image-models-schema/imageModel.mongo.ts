@@ -13,6 +13,9 @@ const ImageHistorySchema: Schema = new mongoose.Schema(
     modelType: {
       type: String,
     },
+    provider: {
+      type: String,
+    },
     history: [
       {
         sender: {
@@ -27,6 +30,10 @@ const ImageHistorySchema: Schema = new mongoose.Schema(
         },
         generated_Image: {
           type: String,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
         },
       },
     ],
