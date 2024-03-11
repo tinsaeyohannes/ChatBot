@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import OpenAiHistoryModel from '../models/ai-chat-models-schema/openAIConversationHistory.mongo';
 import type { ConversationHistoryDocument } from 'types/mongo.schema.types';
 import GeminiHistoryModel from '../models/ai-chat-models-schema/geminiHistoryModel.mongo';
+import CohereHistoryModel from '../models/ai-chat-models-schema/cohereHistoryModel.mongo';
 
 const getAllChatHistory = async (req: Request, res: Response) => {
   const model = req.query.model;
@@ -28,7 +29,15 @@ const getAllChatHistory = async (req: Request, res: Response) => {
         .limit(limit)
         .sort({ createdAt: -1 }); // Sort by createdAt in descending order
     } else if (model === 'gemini') {
-      allChats = await GeminiHistoryModel.find().sort({ createdAt: -1 });
+      allChats = await GeminiHistoryModel.find()
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
+    } else if (model === 'cohere') {
+      allChats = await CohereHistoryModel.find()
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
     }
 
     if (!allChats) {
