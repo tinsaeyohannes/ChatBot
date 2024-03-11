@@ -5,6 +5,7 @@ import ConversationHistoryScreen from '../screens/ConversationHistoryScreen';
 import {userStore} from '../store/useStore';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useChatStore} from '../store/useChatStore';
+import {useImageStore} from '../store/useImageStore';
 
 type DrawerBarContentProps = {
   navigation: DrawerContentComponentProps['navigation'];
@@ -16,13 +17,25 @@ const DrawerBarContent: FC<DrawerBarContentProps> = ({
   const {isDarkMode} = userStore(state => ({
     isDarkMode: state.isDarkMode,
   }));
-  const {getChatHistory} = useChatStore(state => ({
+  const {getChatHistory, currentModel} = useChatStore(state => ({
     getChatHistory: state.getChatHistory,
+    currentModel: state.currentModel,
+  }));
+  const {getAllImageHistories} = useImageStore(state => ({
+    getAllImageHistories: state.getAllImageHistories,
   }));
 
   useEffect(() => {
-    getChatHistory('cohere');
-  }, [getChatHistory]);
+    if (
+      currentModel === 'openai' ||
+      currentModel === 'cohere' ||
+      currentModel === 'gemini'
+    ) {
+      getChatHistory(currentModel);
+    } else {
+      getAllImageHistories();
+    }
+  }, [currentModel, getAllImageHistories, getChatHistory]);
 
   return (
     <SafeAreaView
