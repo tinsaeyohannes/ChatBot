@@ -1,8 +1,8 @@
 export type UseImageStoreStateTypes = {
   imagesHistory: ImagesHistoryTypes[];
-  currentChat: ImagesHistoryTypes | null;
+  currentChat: ImagesHistoryTypes;
   userMessage: string;
-  currentModel: string;
+  modelProvider: string;
 };
 
 export type UseImageStoreActionsTypes = {
@@ -21,7 +21,7 @@ export type UseImageStoreActionsTypes = {
   getAllImageHistories: () => Promise<void>;
 };
 
-export type UserResponse = {
+export type Response = {
   _id: string;
   sender: string;
   prompt?: string;
@@ -30,23 +30,14 @@ export type UserResponse = {
   createdAt: Date;
 };
 
-// export type ModelResponse = {
-//   _id: string;
-//   sender: string;
-//   generated_Image: string;
-//   original_Image?: string;
-//   prompt?: undefined;
-//   createdAt: Date;
-// };
-
 export type ImagesHistoryTypes = {
   _id: string;
   chatName: string;
   modelName: string;
   modelType: string;
   provider: string;
-  history: UserResponse[];
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+  history: Response[];
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 };
