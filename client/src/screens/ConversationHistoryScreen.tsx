@@ -22,11 +22,14 @@ import {formatDate} from '../helper/formatDate';
 import ChatGptIcon from '../assets/icons/chatgpt-icon.svg';
 import CohereIcon from '../assets/icons/cohere-icon.svg';
 import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
+import {useImageStore} from '../store/useImageStore';
+import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
+import type {ImagesHistoryTypes} from '../types/useImageStoreTypes';
 
 type ConversationHistoryScreenProps = {
   navigation: DrawerNavigationHelpers;
 };
-
+// type UnifiedHistoryType = ChatHistoryTypes | ImagesHistoryTypes;
 const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
   navigation,
 }): React.JSX.Element => {
@@ -34,36 +37,78 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
     isDarkMode: state.isDarkMode,
   }));
 
-  const {conversationHistory, userChat, setUserMessage} = useChatStore(
-    state => ({
-      conversationHistory: state.conversationHistory,
-      userChat: state.userChat,
-      setUserMessage: state.setUserMessage,
-    }),
-  );
+  const {
+    conversationHistory,
+    userChat,
+    setUserMessage,
+    emptyUserChat,
+    currentModel,
+  } = useChatStore(state => ({
+    conversationHistory: state.conversationHistory,
+    userChat: state.userChat,
+    setUserMessage: state.setUserMessage,
+    emptyUserChat: state.emptyUserChat,
+    currentModel: state.currentModel,
+  }));
+  const {imagesHistory} = useImageStore(state => ({
+    imagesHistory: state.imagesHistory,
+  }));
 
   const [searchText, setSearchText] = useState<string>('');
   const [chatIndex, setChatIndex] = useState<number | null>(0);
-  const [updatedConversationHistory, setUpdatedConversationHistory] =
-    useState(conversationHistory);
+  const [updatedConversationHistory, setUpdatedConversationHistory] = useState<
+    ChatHistoryTypes[] | ImagesHistoryTypes[]
+  >([]);
 
   useEffect(() => {
-    if (searchText === '') {
-      setUpdatedConversationHistory(conversationHistory);
+    if (
+      currentModel === 'openai' ||
+      currentModel === 'cohere' ||
+      currentModel === 'gemini'
+    ) {
+      if (searchText === '') {
+        setUpdatedConversationHistory(
+          conversationHistory as ChatHistoryTypes[],
+        );
+      } else {
+        setUpdatedConversationHistory(
+          conversationHistory.filter(
+            item =>
+              item?.chatName
+                ?.toLowerCase()
+                .includes(searchText.toLowerCase()) ||
+              item?.history
+                ?.map(itm => itm.message)
+                .join(' ')
+                .toLowerCase()
+                .includes(searchText.toLowerCase()),
+          ),
+        );
+      }
     } else {
-      setUpdatedConversationHistory(
-        conversationHistory.filter(
-          item =>
-            item?.chatName?.toLowerCase().includes(searchText.toLowerCase()) ||
-            item?.history
-              ?.map(itm => itm.message)
-              .join(' ')
-              .toLowerCase()
-              .includes(searchText.toLowerCase()),
-        ),
-      );
+      if (searchText === '') {
+        setUpdatedConversationHistory(imagesHistory as ImagesHistoryTypes[]);
+      } else {
+        setUpdatedConversationHistory(
+          imagesHistory.filter(
+            item =>
+              item?.chatName
+                ?.toLowerCase()
+                .includes(searchText.toLowerCase()) ||
+              item?.history
+                ?.map(itm => itm.prompt)
+                .join(' ')
+                .toLowerCase()
+                .includes(searchText.toLowerCase()),
+          ),
+        );
+      }
     }
-  }, [conversationHistory, searchText]);
+  }, [conversationHistory, currentModel, imagesHistory, searchText]);
+
+  // useEffect(() => {
+  //   console.log('updatedConversationHistory', updatedConversationHistory);
+  // }, [updatedConversationHistory]);
 
   const showMoreButton = () => {
     return (
@@ -93,15 +138,9 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
           <TouchableOpacity
             style={styles.newChatButton}
             onPress={() => {
-              useChatStore.setState({
-                userChat: {
-                  _id: '',
-                  botName: '',
-                  history: [],
-                  chatName: '',
-                },
-              });
+              emptyUserChat();
               setUserMessage('');
+
               navigation.navigate('Chat');
             }}>
             <Text style={styles.newChat}>New Chat</Text>
@@ -110,7 +149,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
       </View>
 
       <FlatList
-        data={updatedConversationHistory || []}
+        data={updatedConversationHistory}
         showsVerticalScrollIndicator={false}
         keyExtractor={item => item._id}
         renderItem={({item, index}) => (
@@ -118,15 +157,19 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
             <TouchableOpacity
               onPress={() => {
                 const chat = item;
-                useChatStore.setState({
-                  userChat: {
-                    botName: '',
-                    _id: '',
-                    history: [],
-                    chatName: '',
-                  },
-                });
-                navigation.navigate('Chat', {chat});
+                emptyUserChat();
+
+                console.log('chat conversation', chat);
+                if (
+                  chat.botName === 'ChatGPT' ||
+                  chat.botName === 'Cohere' ||
+                  chat.botName === 'Gemini'
+                ) {
+                  navigation.navigate('Chat', {chat});
+                } else {
+                  navigation.navigate('Image', {chat});
+                }
+
                 if (!userChat) {
                   setChatIndex(null);
                 } else {
@@ -142,7 +185,19 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                   chatIndex === index && styles.selectedListItem,
                 ]}>
                 <View style={styles.listItem}>
-                  {item.botName === 'ChatGPT' ? (
+                  {item.botName === 'dalle' ? (
+                    <Image
+                      source={require('../assets/icons/dalle.jpg')}
+                      width={25}
+                      height={25}
+                    />
+                  ) : item.botName === 'fal' ? (
+                    <Image
+                      width={25}
+                      height={25}
+                      source={require('../assets/icons/fal.png')}
+                    />
+                  ) : item.botName === 'ChatGPT' ? (
                     <ChatGptIcon width={25} height={25} />
                   ) : item.botName === 'Cohere' ? (
                     <CohereIcon width={24} height={24} />
