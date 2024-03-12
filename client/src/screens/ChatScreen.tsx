@@ -31,7 +31,6 @@ import type {DrawerNavigationProp} from '@react-navigation/drawer';
 import type {ChatHistoryTypes} from '../types/useChatStoreTypes';
 import {useChatStore} from '../store/useChatStore';
 import 'react-native-url-polyfill/auto';
-import {truncateString} from '../helper/truncateString';
 import DropdownAlert, {
   type DropdownAlertData,
 } from 'react-native-dropdownalert';
@@ -72,8 +71,6 @@ const ChatScreen: FC<ChatScreenProps> = ({
     console.log('isDarkMode', isDarkMode);
     console.log('loading', loading);
   }, [isDarkMode, loading]);
-
-  console.log('userUser', userChat);
 
   useEffect(() => {
     if (chat) {
@@ -132,9 +129,11 @@ const ChatScreen: FC<ChatScreenProps> = ({
           </TouchableOpacity>
 
           <Text>
-            {newChat.length === 0
-              ? truncateString(chat?.chatName, 10) || 'New Chat'
-              : null}
+            {currentModel === 'openai'
+              ? 'ChatGPT'
+              : currentModel === 'cohere'
+              ? 'Cohere'
+              : 'Gemini'}
           </Text>
 
           <TouchableOpacity
