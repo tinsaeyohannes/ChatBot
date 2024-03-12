@@ -5,7 +5,7 @@ export const ImageModels: ImageModelTypes[] = [
     id: 1,
     name: 'DALL-E 2',
     modelType: 'txt2img',
-    provider: 'openai',
+    provider: 'dalle',
     backgroundImage:
       'https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F685021f3-6489-43db-a9cf-fa6717a40255_1280x720.png',
   },
