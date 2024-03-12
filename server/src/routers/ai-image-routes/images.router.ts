@@ -11,8 +11,8 @@ import { getAllImageHistories } from '../../controllers/images.controller';
 
 const ImagesRouter: Router = express.Router();
 
-ImagesRouter.post('/openai/createImage', generateImage)
-  .post('/openai/continueCreateImage', continueToGenerateImages)
+ImagesRouter.post('/dalle/createImage', generateImage)
+  .post('/dalle/continueCreateImage', continueToGenerateImages)
   .post('/fal/createImage', generateWithFal)
   .post('/fal/continueCreateImage', continueWithFal)
   .get('/getImagesHistory', getAllImageHistories);
