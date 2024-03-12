@@ -1,5 +1,21 @@
-import React, {useState} from 'react';
-import {Button, Image, StyleSheet} from 'react-native';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+} from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {
   launchImageLibrary,
@@ -13,82 +29,334 @@ import DropdownAlert, {
 
 import {useImageStore} from '../store/useImageStore';
 import {CompareSliderComponent} from '../components/ImageGenerateScreen/CompareSliderComponent';
+import Feather from 'react-native-vector-icons/Feather';
+import {TouchableOpacity} from 'react-native';
+import {TextInput} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import type {DrawerNavigationProp} from '@react-navigation/drawer';
+import type {ParamListBase} from '@react-navigation/native';
+import type {BottomSheetModal} from '@gorhom/bottom-sheet';
+import type {ImagesHistoryTypes} from '../types/useImageStoreTypes';
+import {userStore} from '../store/useStore';
+import BottomSheetComponent from '../components/BottomSheetComponent';
+import ChatGptIcon from '../assets/icons/chatgpt-icon.svg';
+import CohereIcon from '../assets/icons/cohere-icon.svg';
+import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
+import {format} from 'date-fns';
+import {useChatStore} from '../store/useChatStore';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
-const ImageGenerateScreen = (): React.JSX.Element => {
-  const {uploadImage} = useImageStore(state => ({
+type ImageGenerateScreenProps = {
+  navigation: DrawerNavigationProp<ParamListBase>;
+  route: any;
+};
+
+const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
+  navigation,
+  route,
+}): React.JSX.Element => {
+  const chat: ImagesHistoryTypes = route.params?.chat;
+
+  const {currentModel} = useChatStore(state => ({
+    currentModel: state.currentModel,
+  }));
+  const {
+    uploadImage,
+    userMessage,
+    setUserMessage,
+    currentChat,
+    generateImage,
+    modelProvider,
+  } = useImageStore(state => ({
     uploadImage: state.uploadImage,
+    userMessage: state.userMessage,
+    setUserMessage: state.setUserMessage,
+    currentChat: state.currentChat,
+    generateImage: state.generateImage,
+    modelProvider: state.modelProvider,
   }));
   let alert = (_data: DropdownAlertData) =>
     new Promise<DropdownAlertData>(res => res);
 
-  const [image, setImage] = useState('');
   const [base64, setBase64] = useState('');
+
+  const {isDarkMode} = userStore(state => ({
+    isDarkMode: state.isDarkMode,
+  }));
+  const scrollRef = useRef<ScrollView | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    console.log('isDarkMode', isDarkMode);
+    console.log('loading', loading);
+    console.log('modelProvider', modelProvider);
+  }, [isDarkMode, loading, modelProvider]);
+
+  useEffect(() => {
+    if (chat) {
+      useImageStore.setState({currentChat: chat});
+    }
+  }, [chat]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({animated: true});
+  }, []);
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (loading) {
+        setGenerating(true);
+      } else {
+        setGenerating(false);
+      }
+    }, 500);
+
+    if (!loading) {
+      setGenerating(false);
+    }
+  }, [generating, loading]);
+
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  // variables
+  const snapPoints = useMemo(() => ['25%', '50%'], []);
+
+  const handlePresentModalPress = useCallback(() => {
+    Keyboard.dismiss();
+    bottomSheetModalRef.current?.present();
+  }, []);
+  useEffect(() => {
+    console.log('chat', chat);
+    console.log('currentChat', currentChat);
+  }, [chat, currentChat]);
   return (
     <SafeAreaView style={styles.safeAreaViewContainer}>
-      {/* {image && <Image source={{uri: image}} style={styles.image} />} */}
-      {img && (
-        <CompareSliderComponent
-          sliderStyles={{width: 200, height: 200}}
-          before={
-            <Image
-              source={{
-                uri: 'https://res.cloudinary.com/da1msjzp1/image/upload/v1695063922/blog-app/6508965f1895a862f72b00e3/Thumbnails/ec507959956b7c7e61abd1d389dd3ccc.jpg',
-              }}
-              resizeMode="cover"
-              style={styles.image}
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+
+      <View style={styles.mainContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => {
+              navigation.openDrawer();
+            }}>
+            <AntDesign
+              name="menu-fold"
+              size={24}
+              color={isDarkMode ? 'white' : 'black'}
             />
-          }
-          after={
-            <Image
-              source={{
-                uri: 'https://storage.googleapis.com/isolate-dev-hot-rooster_toolkit_bucket/c90442a3d9394876a24b1204d0b71735.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=gke-service-account%40isolate-dev-hot-rooster.iam.gserviceaccount.com%2F20240306%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240306T140219Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=2993a33fa985f0af717a95f06f759935fdb247cb4006674c9632662f5608eb2ce9e1ede52d45eb0824f18b440fc31935d4adbf4722f3aa2bf64c17c405da6ae2a81ce444fcf69d2b78d7422eafdf5c7b53d8962ef981a37a5bf08a61076c2ba6804432353d25a8ca60a4b4831c28bd2ee72ccadc5e138ec466665a48a2c622cbf98a6f3d6103a6cb1de3007eeb5da88ca4ac882a4876092bf52a40974d139007c866976b6905854b5e375b09a875d86296aaafcd4e3b5eccff4d3417d2ff97c534387bc12673c668ef49c2823bbc09f0a2203e5b5800715f7c3745fed97c45ade299825104671c4c1349d8b304804c8995cec170f2b0ac4875904b79f09d11a1',
-              }}
-              resizeMode="cover"
-              style={styles.image}
+          </TouchableOpacity>
+
+          <Text>{currentChat?.modelName}</Text>
+
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handlePresentModalPress}>
+            <AntDesign
+              name="appstore-o"
+              size={24}
+              color={isDarkMode ? 'white' : 'black'}
             />
-          }
-          containerSize={{
-            width: 300,
-            height: 350,
-          }}
-          showSeparationLine={true}
-        />
-      )}
-      <Button
-        title="Launch Image Library"
-        onPress={() =>
-          launchImageLibrary(
-            {
-              mediaType: 'photo' as MediaType,
-              assetRepresentationMode: 'auto',
-              includeBase64: true,
-            },
-            async (response: ImagePickerResponse) => {
-              try {
-                if (!response.assets) {
-                  // Log an error if no assets are returned from the image picker
-                  console.log('ImagePicker Error: No assets returned');
-                  await alert({
-                    type: DropdownAlertType.Error,
-                    title: 'ERROR',
-                    message: 'No assets returned',
-                    interval: 3000,
-                  });
-                } else {
-                  const asset = response.assets[0].uri;
-                  const base64Image = response.assets[0].base64;
-                  setImage(asset as string);
-                  setBase64(base64Image as string);
-                }
-              } catch (error) {
-                console.error(error);
-              }
-            },
-          )
-        }
-      />
-      <Button title="Upload Image" onPress={() => uploadImage(base64)} />
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollViewContainer}>
+          {currentChat &&
+            currentChat.history &&
+            currentChat.history.map(message => (
+              <View style={styles.messageContainer} key={message._id}>
+                <View style={styles.senderPicContainer}>
+                  {message.sender === 'user' ? (
+                    <Image
+                      source={{
+                        uri: 'https://i.pravatar.cc/300',
+                      }}
+                      style={styles.senderPic}
+                    />
+                  ) : currentChat.modelName === 'ChatGPT' ? (
+                    <ChatGptIcon />
+                  ) : currentChat.modelName === 'Cohere' ? (
+                    <CohereIcon />
+                  ) : (
+                    <GeminiIcon />
+                  )}
+                </View>
+                <View style={styles.messageTextContainer}>
+                  <Text style={styles.senderName}>
+                    {message.sender === 'user' ? 'You' : currentChat?.modelName}
+                  </Text>
+                  <Text style={styles.message}>
+                    {message.sender === 'user' && message.prompt}
+                  </Text>
+                </View>
+                {message.sender !== 'user' && (
+                  <View style={styles.imageContainer}>
+                    {currentChat.modelType === 'txt2img' ? (
+                      <>
+                        <Image
+                          source={{uri: message.generated_Image}}
+                          style={styles.image}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <CompareSliderComponent
+                          sliderStyles={{width: 200, height: 200}}
+                          before={
+                            <Image
+                              source={{
+                                uri: message.original_Image,
+                              }}
+                              resizeMode="cover"
+                              style={styles.image}
+                            />
+                          }
+                          after={
+                            <Image
+                              source={{
+                                uri: message.generated_Image,
+                              }}
+                              resizeMode="cover"
+                              style={styles.image}
+                            />
+                          }
+                          containerSize={{
+                            width: 300,
+                            height: 350,
+                          }}
+                          showSeparationLine={true}
+                        />
+
+                        <TouchableOpacity
+                          onPress={() =>
+                            launchImageLibrary(
+                              {
+                                mediaType: 'photo' as MediaType,
+                                assetRepresentationMode: 'auto',
+                                includeBase64: true,
+                              },
+                              async (response: ImagePickerResponse) => {
+                                try {
+                                  if (!response.assets) {
+                                    // Log an error if no assets are returned from the image picker
+                                    console.log(
+                                      'ImagePicker Error: No assets returned',
+                                    );
+                                    await alert({
+                                      type: DropdownAlertType.Error,
+                                      title: 'ERROR',
+                                      message: 'No assets returned',
+                                      interval: 3000,
+                                    });
+                                  } else {
+                                    const base64Image =
+                                      response.assets[0].base64;
+                                    setBase64(base64Image as string);
+                                  }
+                                } catch (error) {
+                                  throw new Error(error as string);
+                                }
+                              },
+                            )
+                          }>
+                          <Text>Select Image</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                )}
+
+                <Text style={styles.date}>
+                  {message.createdAt
+                    ? format(message?.createdAt, 'mm:ss')
+                    : format(new Date(), 'mm:ss')}
+                </Text>
+              </View>
+            ))}
+          {generating && (
+            <View style={styles.messageContainer}>
+              <View style={styles.senderPicContainer}>
+                {currentModel === 'openai' ? (
+                  <ChatGptIcon width={35} height={35} />
+                ) : currentModel === 'cohere' ? (
+                  <CohereIcon width={35} height={35} />
+                ) : (
+                  <GeminiIcon width={35} height={35} />
+                )}
+              </View>
+              <View>
+                <Text style={styles.senderName}>AI</Text>
+                <Text selectable style={styles.message}>
+                  Generating...
+                </Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+        <LinearGradient
+          start={{x: 1, y: 0}}
+          end={{x: 1, y: 1}}
+          style={styles.linearGradient}
+          colors={['#03130F00', '#081814', '#03130F']}>
+          <View style={styles.chatInputContainer}>
+            <TextInput
+              value={userMessage}
+              placeholder="Message"
+              placeholderTextColor={isDarkMode ? 'white' : 'black'}
+              style={styles.inputField}
+              onChangeText={msg => setUserMessage(msg)}
+            />
+            {loading ? (
+              <ActivityIndicator size={'large'} />
+            ) : (
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={async () => {
+                  console.log('currentChat', currentChat);
+                  console.log('currentChat?.modelType', currentChat?.modelType);
+                  if (currentChat?.modelType === 'txt2img') {
+                    await generateImage(
+                      currentChat?.modelName,
+                      userMessage,
+                      setLoading,
+                    );
+                  } else {
+                    await uploadImage(
+                      base64,
+                      currentChat?.modelName,
+                      userMessage,
+                      setLoading,
+                    );
+                  }
+                  setUserMessage('');
+                }}>
+                <Feather
+                  name="send"
+                  size={24}
+                  color={isDarkMode ? 'white' : 'black'}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </LinearGradient>
+      </View>
+
       <DropdownAlert alert={func => (alert = func)} />
+
+      <BottomSheetComponent
+        navigation={navigation}
+        bottomSheetModalRef={bottomSheetModalRef}
+        snapPoints={snapPoints}
+        handlePresentModalPress={handlePresentModalPress}
+      />
     </SafeAreaView>
   );
 };
@@ -96,9 +364,106 @@ const ImageGenerateScreen = (): React.JSX.Element => {
 const styles = StyleSheet.create({
   safeAreaViewContainer: {
     flex: 1,
+    backgroundColor: '#031C1A',
+  },
+  darkBg: {
     backgroundColor: '#101010',
+  },
+  lightBg: {
+    backgroundColor: '#E5E5E5',
+  },
+  mainContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerButton: {
+    width: hp(6),
+    height: hp(6),
+    margin: hp(1.5),
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 50,
+    backgroundColor: '#292929',
+  },
+  senderPicContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#E5E5E5',
+    width: hp(5),
+    height: hp(5),
+    borderRadius: 50,
+    margin: hp(1.5),
+    overflow: 'hidden',
+  },
+
+  senderPic: {
+    aspectRatio: 16 / 9,
+    width: hp(5),
+    height: hp(5),
+    borderRadius: 50,
+  },
+  messageTextContainer: {
+    flexDirection: 'column',
+  },
+  senderName: {
+    fontWeight: 'bold',
+    fontSize: hp(2.5),
+    color: 'lightblue',
+  },
+  darkText: {
+    color: 'dark',
+  },
+  message: {
+    fontSize: hp(2.5),
+    fontFamily: 'open-sans',
+    width: wp(75),
+    color: '#E5E5E5',
+  },
+  date: {
+    fontSize: hp(1.8),
+    fontFamily: 'open-sans',
+    width: wp(75),
+    color: 'gray',
+    textAlign: 'right',
+  },
+  linearGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: hp(15),
+    justifyContent: 'flex-end',
+  },
+  scrollViewContainer: {
+    paddingBottom: hp(15),
+  },
+  messageContainer: {
+    // flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chatInputContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    margin: hp(1),
+    paddingHorizontal: hp(1),
+    borderRadius: 50,
+    backgroundColor: '#292929',
+  },
+  inputField: {
+    width: wp(70),
+    marginLeft: hp(1),
+  },
+  imageContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
     width: 300,
