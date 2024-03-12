@@ -113,8 +113,6 @@ export const useChatStore = create(
                   data,
                   ...conversationHistory.slice(chatIndex + 1),
                 ],
-              });
-              set({
                 userChat: data,
               });
             }
