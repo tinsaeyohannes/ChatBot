@@ -118,7 +118,17 @@ const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
                   emptyUserChat();
                   bottomSheetModalRef.current?.dismiss();
                   useChatStore.setState({currentModel: model.provider});
-                  useImageStore.setState({currentModel: model.provider});
+                  useImageStore.setState({modelProvider: model.provider});
+                  useImageStore.setState({
+                    currentChat: {
+                      _id: '',
+                      modelName: model.name,
+                      modelType: model.modelType,
+                      provider: model.provider,
+                      history: [],
+                      chatName: '',
+                    },
+                  });
                   navigation.navigate('Image');
                   getAllImageHistories();
                 }}>
