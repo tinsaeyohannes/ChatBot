@@ -93,6 +93,7 @@ const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
                   bottomSheetModalRef.current?.dismiss();
                   useChatStore.setState({currentModel: model.endPoint});
                   getChatHistory(model.endPoint);
+                  navigation.navigate('Chat');
                 }}>
                 {model.name === 'ChatGPT' ? (
                   <ChatGptIcon width={45} height={45} />
@@ -207,9 +208,9 @@ const styles = StyleSheet.create({
   },
   imageModels: {
     margin: 10,
-    backgroundColor: 'rgba(75,255,75, 0.2)',
+    backgroundColor: 'rgba(95,255,185, 0.2)',
     width: Dimensions.get('window').width - 20,
-    height: hp(12),
+    height: hp(15),
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
