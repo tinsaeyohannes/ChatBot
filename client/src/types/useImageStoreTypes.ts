@@ -1,22 +1,25 @@
+import type {ScrollView} from 'react-native';
+
 export type UseImageStoreStateTypes = {
   imagesHistory: ImagesHistoryTypes[];
   currentChat: ImagesHistoryTypes;
   userMessage: string;
   modelProvider: string;
+  model: string;
 };
 
 export type UseImageStoreActionsTypes = {
   setUserMessage: (message: string) => void;
   generateImage: (
-    model: string,
     prompt: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    scrollRef: React.MutableRefObject<ScrollView | null>,
   ) => Promise<void>;
   uploadImage: (
     image: string,
-    model: string,
     prompt: string,
     setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+    scrollRef: React.MutableRefObject<ScrollView | null>,
   ) => Promise<void>;
   getAllImageHistories: () => Promise<void>;
 };
