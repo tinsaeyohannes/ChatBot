@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Keyboard,
   ScrollView,
   StatusBar,
@@ -26,6 +25,7 @@ import DropdownAlert, {
   DropdownAlertType,
   type DropdownAlertData,
 } from 'react-native-dropdownalert';
+import FastImage from 'react-native-fast-image';
 
 import {useImageStore} from '../store/useImageStore';
 import {CompareSliderComponent} from '../components/ImageGenerateScreen/CompareSliderComponent';
@@ -82,6 +82,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
   let alert = (_data: DropdownAlertData) =>
     new Promise<DropdownAlertData>(res => res);
 
+  const [imgPreview, setImgPreview] = useState('');
   const [base64, setBase64] = useState('');
 
   const {isDarkMode} = userStore(state => ({
@@ -175,7 +176,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
               <View style={styles.messageContainer} key={message._id}>
                 <View style={styles.senderPicContainer}>
                   {message.sender === 'user' ? (
-                    <Image
+                    <FastImage
                       source={{
                         uri: 'https://i.pravatar.cc/300',
                       }}
@@ -200,75 +201,45 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
                 {message.sender !== 'user' && (
                   <View style={styles.imageContainer}>
                     {currentChat.modelType === 'txt2img' ? (
-                      <>
-                        <Image
-                          source={{uri: message.generated_Image}}
-                          style={styles.image}
-                        />
-                      </>
+                      <FastImage
+                        source={{uri: message.generated_Image}}
+                        style={styles.image}
+                      />
                     ) : (
                       <>
-                        <CompareSliderComponent
-                          sliderStyles={{width: 200, height: 200}}
-                          before={
-                            <Image
-                              source={{
-                                uri: message.original_Image,
-                              }}
-                              resizeMode="cover"
-                              style={styles.image}
-                            />
-                          }
-                          after={
-                            <Image
-                              source={{
-                                uri: message.generated_Image,
-                              }}
-                              resizeMode="cover"
-                              style={styles.image}
-                            />
-                          }
-                          containerSize={{
-                            width: 300,
-                            height: 350,
-                          }}
-                          showSeparationLine={true}
-                        />
-
-                        <TouchableOpacity
-                          onPress={() =>
-                            launchImageLibrary(
-                              {
-                                mediaType: 'photo' as MediaType,
-                                assetRepresentationMode: 'auto',
-                                includeBase64: true,
-                              },
-                              async (response: ImagePickerResponse) => {
-                                try {
-                                  if (!response.assets) {
-                                    // Log an error if no assets are returned from the image picker
-                                    console.log(
-                                      'ImagePicker Error: No assets returned',
-                                    );
-                                    await alert({
-                                      type: DropdownAlertType.Error,
-                                      title: 'ERROR',
-                                      message: 'No assets returned',
-                                      interval: 3000,
-                                    });
-                                  } else {
-                                    const base64Image =
-                                      response.assets[0].base64;
-                                    setBase64(base64Image as string);
-                                  }
-                                } catch (error) {
-                                  throw new Error(error as string);
-                                }
-                              },
-                            )
-                          }>
-                          <Text>Select Image</Text>
-                        </TouchableOpacity>
+                        {imgPreview ? (
+                          <FastImage
+                            source={{uri: imgPreview}}
+                            style={styles.image}
+                          />
+                        ) : (
+                          <CompareSliderComponent
+                            sliderStyles={{width: 200, height: 200}}
+                            before={
+                              <FastImage
+                                source={{
+                                  uri: message.original_Image,
+                                }}
+                                resizeMode="cover"
+                                style={styles.image}
+                              />
+                            }
+                            after={
+                              <FastImage
+                                source={{
+                                  uri: message.generated_Image,
+                                }}
+                                resizeMode="cover"
+                                style={styles.image}
+                              />
+                            }
+                            containerSize={{
+                              width: 300,
+                              height: 350,
+                            }}
+                            showSeparationLine={true}
+                          />
+                        )}
                       </>
                     )}
                   </View>
@@ -293,12 +264,19 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
                 )}
               </View>
               <View>
-                <Text style={styles.senderName}>AI</Text>
+                <Text style={styles.senderName}>{currentChat.modelName}</Text>
                 <Text selectable style={styles.message}>
                   Generating...
                 </Text>
               </View>
             </View>
+          )}
+          {currentChat.modelType === 'img2img' && imgPreview && (
+            <>
+              <View style={styles.imageContainer}>
+                <FastImage source={{uri: imgPreview}} style={styles.image} />
+              </View>
+            </>
           )}
         </ScrollView>
         <LinearGradient
@@ -306,46 +284,97 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
           end={{x: 1, y: 1}}
           style={styles.linearGradient}
           colors={['#03130F00', '#081814', '#03130F']}>
-          <View style={styles.chatInputContainer}>
-            <TextInput
-              value={userMessage}
-              placeholder="Message"
-              placeholderTextColor={isDarkMode ? 'white' : 'black'}
-              style={styles.inputField}
-              onChangeText={msg => setUserMessage(msg)}
-            />
-            {loading ? (
-              <ActivityIndicator size={'large'} />
-            ) : (
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={async () => {
-                  console.log('currentChat', currentChat);
-                  console.log('currentChat?.modelType', currentChat?.modelType);
-                  if (currentChat?.modelType === 'txt2img') {
-                    await generateImage(
-                      currentChat?.modelName,
-                      userMessage,
-                      setLoading,
-                    );
-                  } else {
-                    await uploadImage(
-                      base64,
-                      currentChat?.modelName,
-                      userMessage,
-                      setLoading,
-                    );
-                  }
-                  setUserMessage('');
-                }}>
-                <Feather
-                  name="send"
-                  size={24}
-                  color={isDarkMode ? 'white' : 'black'}
+          {currentChat.modelType === 'img2img' ? (
+            <View style={styles.imagePreviewContainer}>
+              <View style={styles.chatInputContainer}>
+                <TextInput
+                  value={userMessage}
+                  placeholder="Prompt: (optional)"
+                  placeholderTextColor="gray"
+                  style={styles.inputField}
+                  onChangeText={msg => setUserMessage(msg)}
                 />
+              </View>
+              <TouchableOpacity
+                style={styles.selectImageButton}
+                onPress={() =>
+                  launchImageLibrary(
+                    {
+                      mediaType: 'photo' as MediaType,
+                      assetRepresentationMode: 'auto',
+                      includeBase64: true,
+                    },
+                    async (response: ImagePickerResponse) => {
+                      try {
+                        if (!response.assets) {
+                          // Log an error if no assets are returned from the image picker
+                          console.log('ImagePicker Error: No assets returned');
+                          await alert({
+                            type: DropdownAlertType.Error,
+                            title: 'ERROR',
+                            message: 'No assets returned',
+                            interval: 3000,
+                          });
+                        } else {
+                          const base64Image = response.assets[0].base64;
+                          setBase64(base64Image as string);
+                          setImgPreview(response.assets[0].uri as string);
+                        }
+                      } catch (error) {
+                        throw new Error(error as string);
+                      }
+                    },
+                  )
+                }>
+                <Text style={styles.selectImageText}>Select FastImage</Text>
               </TouchableOpacity>
-            )}
-          </View>
+              <TouchableOpacity
+                style={styles.selectImageButton}
+                onPress={async () => {
+                  if (!base64) {
+                    console.log('No image to upload');
+                    return;
+                  }
+                  useImageStore.setState({model: currentChat?.modelName});
+                  await uploadImage(base64, userMessage, setLoading, scrollRef);
+
+                  setUserMessage('');
+                  setImgPreview('');
+                  setBase64('');
+                }}>
+                <Text style={styles.selectImageText}>Upload FastImage</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.chatInputContainer}>
+              <TextInput
+                value={userMessage}
+                placeholder="Message"
+                placeholderTextColor={isDarkMode ? 'white' : 'black'}
+                style={styles.inputField}
+                onChangeText={msg => setUserMessage(msg)}
+              />
+              {loading ? (
+                <ActivityIndicator size={'large'} />
+              ) : (
+                <TouchableOpacity
+                  style={styles.headerButton}
+                  onPress={async () => {
+                    useImageStore.setState({model: currentChat?.modelName});
+
+                    await generateImage(userMessage, setLoading, scrollRef);
+
+                    setUserMessage('');
+                  }}>
+                  <Feather
+                    name="send"
+                    size={24}
+                    color={isDarkMode ? 'white' : 'black'}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </LinearGradient>
       </View>
 
@@ -425,6 +454,21 @@ const styles = StyleSheet.create({
     width: wp(75),
     color: '#E5E5E5',
   },
+
+  selectImageButton: {
+    height: hp(8),
+    marginHorizontal: hp(1.5),
+    marginVertical: hp(1),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 50,
+    backgroundColor: '#292929',
+  },
+  selectImageText: {
+    fontSize: hp(2.5),
+    color: 'white',
+    fontWeight: 'bold',
+  },
   date: {
     fontSize: hp(1.8),
     fontFamily: 'open-sans',
@@ -465,6 +509,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  imagePreviewContainer: {
+    marginHorizontal: wp(3),
+    // alignItems: 'center',
+    // justifyContent: 'center',
+  },
   image: {
     width: 300,
     height: 300,
@@ -474,4 +523,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ImageGenerateScreen;
+export default React.memo(ImageGenerateScreen);
