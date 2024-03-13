@@ -21,21 +21,29 @@ const DrawerBarContent: FC<DrawerBarContentProps> = ({
     getChatHistory: state.getChatHistory,
     currentModel: state.currentModel,
   }));
+
   const {getAllImageHistories} = useImageStore(state => ({
     getAllImageHistories: state.getAllImageHistories,
   }));
 
+  // This useEffect hook runs when the currentModel, getAllImageHistories, getChatHistory, or navigation changes
   useEffect(() => {
+    // If the currentModel is 'openai', 'cohere', or 'gemini', then get chat history for that model and navigate to the 'Chat' screen
     if (
       currentModel === 'openai' ||
       currentModel === 'cohere' ||
       currentModel === 'gemini'
     ) {
       getChatHistory(currentModel);
+      navigation.navigate('Chat');
     } else {
+      // If the currentModel is not 'openai', 'cohere', or 'gemini', then get all image histories and navigate to the 'Image' screen
       getAllImageHistories();
+      navigation.navigate('Image');
     }
-  }, [currentModel, getAllImageHistories, getChatHistory]);
+  }, [currentModel, getAllImageHistories, getChatHistory, navigation]);
+
+  console.log('currentModel', currentModel);
 
   return (
     <SafeAreaView
