@@ -207,7 +207,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
                       />
                     ) : (
                       <>
-                        {imgPreview ? (
+                        {!message.original_Image && !message.generated_Image ? (
                           <FastImage
                             source={{uri: imgPreview}}
                             style={styles.image}
