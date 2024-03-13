@@ -138,10 +138,28 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
           <TouchableOpacity
             style={styles.newChatButton}
             onPress={() => {
-              emptyUserChat();
-              setUserMessage('');
+              if (
+                currentModel === 'ChatGPT' ||
+                currentModel === 'Cohere' ||
+                currentModel === 'Gemini'
+              ) {
+                emptyUserChat();
 
-              navigation.navigate('Chat');
+                navigation.navigate('Chat');
+              } else {
+                useImageStore.setState({
+                  currentChat: {
+                    _id: '',
+                    modelName: '',
+                    modelType: '',
+                    provider: '',
+                    history: [],
+                    chatName: '',
+                  },
+                });
+                navigation.navigate('Image');
+              }
+              setUserMessage('');
             }}>
             <Text style={styles.newChat}>New Chat</Text>
           </TouchableOpacity>
@@ -187,7 +205,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                 <View style={styles.listItem}>
                   {item.botName === 'dalle' ? (
                     <Image
-                      source={require('../assets/icons/dalle.jpg')}
+                      source={require('../assets/icons/dalle.png')}
                       width={25}
                       height={25}
                     />
@@ -221,7 +239,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
           </>
         )}
         ListFooterComponent={
-          updatedConversationHistory.length > 9 ? showMoreButton : null
+          updatedConversationHistory.length >= 10 ? showMoreButton : null
         }
       />
 
