@@ -35,12 +35,12 @@ import DropdownAlert, {
   type DropdownAlertData,
 } from 'react-native-dropdownalert';
 import LinearGradient from 'react-native-linear-gradient';
-import {format} from 'date-fns';
 import ChatGptIcon from '../assets/icons/chatgpt-icon.svg';
 import CohereIcon from '../assets/icons/cohere-icon.svg';
 import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
 import BottomSheetComponent from '../components/BottomSheetComponent';
 import type {BottomSheetModal} from '@gorhom/bottom-sheet';
+import {formatDate} from '../helper/formatDate';
 
 type ChatScreenProps = {
   navigation: DrawerNavigationProp<ParamListBase>;
@@ -180,8 +180,8 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   </Text>
                   <Text style={styles.date}>
                     {message.createdAt
-                      ? format(message?.createdAt, 'mm:ss')
-                      : format(new Date(), 'mm:ss')}
+                      ? formatDate(message?.createdAt)
+                      : formatDate(new Date(), 'mm:ss')}
                   </Text>
                 </View>
               </View>
