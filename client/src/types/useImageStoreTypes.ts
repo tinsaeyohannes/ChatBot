@@ -40,7 +40,7 @@ export type ImagesHistoryTypes = {
   modelType: string;
   provider: string;
   history: Response[];
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   __v?: number;
 };
