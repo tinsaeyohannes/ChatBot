@@ -7,7 +7,10 @@ const getAllImageHistories = async (req: Request, res: Response) => {
   const skip = (page - 1) * limit;
 
   try {
-    const imageHistory = await ImageHistoryModel.find().skip(skip).limit(limit);
+    const imageHistory = await ImageHistoryModel.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
     if (!imageHistory) {
       res.status(404).json({
