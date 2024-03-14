@@ -67,6 +67,7 @@ const generateWithFal = async (req: Request, res: Response) => {
         });
 
         const response = await newChat.save();
+        console.log('response', response);
         res.status(200).json(response);
         return;
       } else if (model === m.label && m.modelType === 'img2img') {
@@ -113,6 +114,8 @@ const generateWithFal = async (req: Request, res: Response) => {
           });
 
           const response = await newChat.save();
+          console.log('response', response);
+
           res.status(200).json(response);
           return;
         } else if (falResponse.image) {
@@ -124,6 +127,8 @@ const generateWithFal = async (req: Request, res: Response) => {
           });
 
           const response = await newChat.save();
+          console.log('response', response);
+
           res.status(200).json(response);
           return;
         } else {
@@ -145,8 +150,12 @@ const continueWithFal = async (req: Request, res: Response) => {
     image,
     prompt,
     model,
-  }: { chatId: string; prompt: string; image: string; model: string } =
-    req.body;
+  }: {
+    chatId: string;
+    prompt: string;
+    image: string;
+    model: string;
+  } = req.body;
 
   if (!model) {
     res.status(400).json({
@@ -156,47 +165,58 @@ const continueWithFal = async (req: Request, res: Response) => {
   }
 
   console.log('model', model);
+  console.log('prompt', prompt);
+  console.log('chatId', chatId);
+  if (!image) {
+    console.log('image not uploaded1');
+  }
+  let statusCode = 500;
 
   try {
     const chat = await ImageHistoryModel.findById(chatId);
 
     if (!chat) {
-      res.status(404).json({
-        error: 'Chat not found',
-      });
-      return;
+      statusCode = 404;
+      throw new Error('Chat not found');
     }
 
     const updatedImage = `data:image/png;base64,${image}`;
 
     for (const m of Models) {
       if (model === m.label && m.modelType === 'txt2img') {
-        const falResponse: FalResponseTypes = await falClient.subscribe(
-          m.modelName,
-          {
-            input: {
-              prompt:
-                '(masterpiece:1.4), (best quality), (detailed), ' + prompt,
-              negative_prompt,
+        if (prompt) {
+          const falResponse: FalResponseTypes = await falClient.subscribe(
+            m.modelName,
+            {
+              input: {
+                prompt:
+                  '(masterpiece:1.4), (best quality), (detailed), ' + prompt,
+                negative_prompt,
+              },
             },
-          },
-        );
+          );
 
-        chat.history.push({
-          sender: 'user',
-          prompt: prompt,
-          createdAt: new Date(),
-        });
+          chat.history.push({
+            sender: 'user',
+            prompt: prompt,
+            createdAt: new Date(),
+          });
 
-        chat.history.push({
-          sender: 'model',
-          generated_Image: falResponse.images[0].url,
-          createdAt: new Date(),
-        });
+          chat.history.push({
+            sender: 'model',
+            generated_Image: falResponse.images[0].url,
+            createdAt: new Date(),
+          });
 
-        const response = await chat.save();
-        res.status(200).json(response);
-        return;
+          const response = await chat.save();
+          console.log('response', response);
+
+          res.status(200).json(response);
+          return;
+        } else {
+          statusCode = 400;
+          throw new Error('Please enter a prompt');
+        }
       } else if (model === m.label && m.modelType === 'img2img') {
         const { secureUrl } = (await uploadPicture(
           updatedImage,
@@ -206,7 +226,7 @@ const continueWithFal = async (req: Request, res: Response) => {
           await falClient.subscribe(m.modelName, {
             input: {
               image_url: secureUrl,
-              prompt: prompt,
+              prompt: prompt || 'No Prompt',
             },
           });
 
@@ -216,17 +236,8 @@ const continueWithFal = async (req: Request, res: Response) => {
           createdAt: new Date(),
         });
 
-        chat.history.push({
-          sender: 'model',
-          generated_Image: falResponse.images[0].url,
-          original_Image: secureUrl,
-          createdAt: new Date(),
-        });
-
-        const response = await chat.save();
-        res.status(200).json(response);
-
         if (falResponse.images) {
+          console.log('images', falResponse.images);
           chat.history.push({
             sender: 'model',
             generated_Image: falResponse.images[0].url,
@@ -238,6 +249,8 @@ const continueWithFal = async (req: Request, res: Response) => {
           res.status(200).json(response);
           return;
         } else if (falResponse.image) {
+          console.log('image', image);
+
           chat.history.push({
             sender: 'model',
             generated_Image: falResponse.image.url,
@@ -249,18 +262,14 @@ const continueWithFal = async (req: Request, res: Response) => {
           res.status(200).json(response);
           return;
         } else {
-          res
-            .status(500)
-            .json({ error: 'No images returned from the AI model' });
+          statusCode = 500;
+          throw new Error('No images returned from the AI model');
         }
-      } else {
-        res.status(500).json({ error: 'Model not found' });
-        return;
       }
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: (error as Error).message });
+    res.status(statusCode).json({ error: (error as Error).message });
   }
 };
 
