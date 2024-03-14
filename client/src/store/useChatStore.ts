@@ -28,7 +28,7 @@ export const useChatStore = create(
         _id: '',
         history: [],
         chatName: '',
-        botName: '',
+        modelName: '',
         createdAt: new Date(),
       },
       currentModel: '',
@@ -176,7 +176,7 @@ export const useChatStore = create(
         set({
           userChat: {
             _id: '',
-            botName: '',
+            modelName: '',
             history: [],
             chatName: '',
           },
