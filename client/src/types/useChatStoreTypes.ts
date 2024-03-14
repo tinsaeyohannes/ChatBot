@@ -27,14 +27,14 @@ export type ChatConversationTypes = {
   _id?: string;
   sender: string;
   message: string;
-  createdAt: string;
+  createdAt: Date;
 };
 
 export type ChatHistoryTypes = {
   __v?: number;
   _id: string;
   chatName: string;
-  botName: string;
+  modelName: string;
   history: ChatConversationTypes[];
   createdAt?: Date;
   updatedAt?: Date;
