@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Keyboard,
   ScrollView,
   StatusBar,
@@ -45,6 +46,7 @@ import CohereIcon from '../assets/icons/cohere-icon.svg';
 import GeminiIcon from '../assets/icons/google-gemini-icon.svg';
 import {format} from 'date-fns';
 import {useChatStore} from '../store/useChatStore';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -154,7 +156,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
             />
           </TouchableOpacity>
 
-          <Text>{currentChat?.modelName}</Text>
+          <Text style={styles.headerTitle}>{currentChat?.modelName}</Text>
 
           <TouchableOpacity
             style={styles.headerButton}
@@ -174,29 +176,33 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
             currentChat.history &&
             currentChat.history.map(message => (
               <View style={styles.messageContainer} key={message._id}>
-                <View style={styles.senderPicContainer}>
-                  {message.sender === 'user' ? (
-                    <FastImage
-                      source={{
-                        uri: 'https://i.pravatar.cc/300',
-                      }}
-                      style={styles.senderPic}
-                    />
-                  ) : currentChat.modelName === 'ChatGPT' ? (
-                    <ChatGptIcon />
-                  ) : currentChat.modelName === 'Cohere' ? (
-                    <CohereIcon />
-                  ) : (
-                    <GeminiIcon />
-                  )}
-                </View>
-                <View style={styles.messageTextContainer}>
-                  <Text style={styles.senderName}>
-                    {message.sender === 'user' ? 'You' : currentChat?.modelName}
-                  </Text>
-                  <Text style={styles.message}>
-                    {message.sender === 'user' && message.prompt}
-                  </Text>
+                <View style={styles.senderContainer}>
+                  <View style={styles.senderPicContainer}>
+                    {message.sender === 'user' ? (
+                      <FastImage
+                        source={{
+                          uri: 'https://i.pravatar.cc/300',
+                        }}
+                        style={styles.senderPic}
+                      />
+                    ) : currentChat.modelName === 'ChatGPT' ? (
+                      <ChatGptIcon />
+                    ) : currentChat.modelName === 'Cohere' ? (
+                      <CohereIcon />
+                    ) : (
+                      <GeminiIcon />
+                    )}
+                  </View>
+                  <View style={styles.messageTextContainer}>
+                    <Text style={styles.senderName}>
+                      {message.sender === 'user'
+                        ? 'You'
+                        : currentChat?.modelName}
+                    </Text>
+                    <Text style={styles.message}>
+                      {message.sender === 'user' && message.prompt}
+                    </Text>
+                  </View>
                 </View>
                 {message.sender !== 'user' && (
                   <View style={styles.imageContainer}>
@@ -214,7 +220,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
                           />
                         ) : (
                           <CompareSliderComponent
-                            sliderStyles={{width: 200, height: 200}}
+                            sliderStyles={styles.imageCompare}
                             before={
                               <FastImage
                                 source={{
@@ -286,7 +292,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
           colors={['#03130F00', '#081814', '#03130F']}>
           {currentChat.modelType === 'img2img' ? (
             <View style={styles.imagePreviewContainer}>
-              <View style={styles.chatInputContainer}>
+              <View style={styles.promptInputContainer}>
                 <TextInput
                   value={userMessage}
                   placeholder="Prompt: (optional)"
@@ -294,42 +300,44 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
                   style={styles.inputField}
                   onChangeText={msg => setUserMessage(msg)}
                 />
+                <TouchableOpacity
+                  style={styles.selectImageButton}
+                  onPress={() =>
+                    launchImageLibrary(
+                      {
+                        mediaType: 'photo' as MediaType,
+                        assetRepresentationMode: 'auto',
+                        includeBase64: true,
+                      },
+                      async (response: ImagePickerResponse) => {
+                        try {
+                          if (!response.assets) {
+                            // Log an error if no assets are returned from the image picker
+                            console.log(
+                              'ImagePicker Error: No assets returned',
+                            );
+                            await alert({
+                              type: DropdownAlertType.Error,
+                              title: 'ERROR',
+                              message: 'No assets returned',
+                              interval: 3000,
+                            });
+                          } else {
+                            const base64Image = response.assets[0].base64;
+                            setBase64(base64Image as string);
+                            setImgPreview(response.assets[0].uri as string);
+                          }
+                        } catch (error) {
+                          throw new Error(error as string);
+                        }
+                      },
+                    )
+                  }>
+                  <FontAwesome name="file-image-o" size={24} />
+                </TouchableOpacity>
               </View>
               <TouchableOpacity
-                style={styles.selectImageButton}
-                onPress={() =>
-                  launchImageLibrary(
-                    {
-                      mediaType: 'photo' as MediaType,
-                      assetRepresentationMode: 'auto',
-                      includeBase64: true,
-                    },
-                    async (response: ImagePickerResponse) => {
-                      try {
-                        if (!response.assets) {
-                          // Log an error if no assets are returned from the image picker
-                          console.log('ImagePicker Error: No assets returned');
-                          await alert({
-                            type: DropdownAlertType.Error,
-                            title: 'ERROR',
-                            message: 'No assets returned',
-                            interval: 3000,
-                          });
-                        } else {
-                          const base64Image = response.assets[0].base64;
-                          setBase64(base64Image as string);
-                          setImgPreview(response.assets[0].uri as string);
-                        }
-                      } catch (error) {
-                        throw new Error(error as string);
-                      }
-                    },
-                  )
-                }>
-                <Text style={styles.selectImageText}>Select FastImage</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.selectImageButton}
+                style={styles.uploadImageButton}
                 onPress={async () => {
                   if (!base64) {
                     console.log('No image to upload');
@@ -342,7 +350,8 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
                   setImgPreview('');
                   setBase64('');
                 }}>
-                <Text style={styles.selectImageText}>Upload FastImage</Text>
+                <FontAwesome name="cloud-upload" size={24} />
+                <Text style={styles.selectImageText}>Upload Image</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -385,6 +394,7 @@ const ImageGenerateScreen: FC<ImageGenerateScreenProps> = ({
         bottomSheetModalRef={bottomSheetModalRef}
         snapPoints={snapPoints}
         handlePresentModalPress={handlePresentModalPress}
+        setLoading={setLoading}
       />
     </SafeAreaView>
   );
@@ -395,6 +405,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#031C1A',
   },
+
   darkBg: {
     backgroundColor: '#101010',
   },
@@ -410,6 +421,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerTitle: {
+    fontWeight: 'bold',
+    fontSize: hp(2.5),
+    color: 'white',
+  },
   headerButton: {
     width: hp(6),
     height: hp(6),
@@ -419,10 +435,16 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: '#292929',
   },
+
+  senderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   senderPicContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     backgroundColor: '#E5E5E5',
     width: hp(5),
     height: hp(5),
@@ -432,7 +454,7 @@ const styles = StyleSheet.create({
   },
 
   senderPic: {
-    aspectRatio: 16 / 9,
+    // aspectRatio: 16 / 9,
     width: hp(5),
     height: hp(5),
     borderRadius: 50,
@@ -454,15 +476,38 @@ const styles = StyleSheet.create({
     width: wp(75),
     color: '#E5E5E5',
   },
+  promptInputContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
 
+    borderRadius: 10,
+    backgroundColor: '#292929',
+  },
   selectImageButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    height: hp(7.4),
+    width: hp(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderColor: 'gray',
+    borderWidth: 1,
+
+    backgroundColor: '#292929',
+  },
+  uploadImageButton: {
     height: hp(8),
-    marginHorizontal: hp(1.5),
+    // marginHorizontal: hp(1.5),
     marginVertical: hp(1),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 50,
+    borderRadius: 10,
     backgroundColor: '#292929',
+    flexDirection: 'row',
+    gap: 10,
   },
   selectImageText: {
     fontSize: hp(2.5),
@@ -514,12 +559,17 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
     // justifyContent: 'center',
   },
+
   image: {
-    width: 300,
-    height: 300,
+    width: Dimensions.get('screen').width - 20,
+    height: hp(45),
     borderRadius: 20,
     marginVertical: 20,
     overflow: 'hidden',
+  },
+  imageCompare: {
+    width: wp(70),
+    height: hp(40),
   },
 });
 
