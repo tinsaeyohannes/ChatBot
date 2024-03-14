@@ -36,6 +36,7 @@ type ImageUploadBottomSheetProps = {
   handlePresentModalPress: () => void;
   bottomSheetModalRef: React.RefObject<BottomSheetModal>;
   navigation: DrawerNavigationProp<ParamListBase>;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const CustomBackdrop = (
@@ -56,6 +57,7 @@ const CustomBackdrop = (
 const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
   bottomSheetModalRef,
   navigation,
+  setLoading,
 }): React.JSX.Element => {
   const {getChatHistory, emptyUserChat} = useChatStore(state => ({
     getChatHistory: state.getChatHistory,
@@ -94,6 +96,7 @@ const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
                   useChatStore.setState({currentModel: model.endPoint});
                   getChatHistory(model.endPoint);
                   navigation.navigate('Chat');
+                  setLoading(false);
                 }}>
                 {model.name === 'ChatGPT' ? (
                   <ChatGptIcon width={45} height={45} />
@@ -132,6 +135,7 @@ const BottomSheetComponent: FC<ImageUploadBottomSheetProps> = ({
                   });
                   navigation.navigate('Image');
                   getAllImageHistories();
+                  setLoading(false);
                 }}>
                 <ImageBackground
                   resizeMode="contain"
