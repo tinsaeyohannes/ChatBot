@@ -137,7 +137,7 @@ export const useImageStore = create(
             {
               _id: uuid.v4().toString(),
               sender: 'user',
-              prompt: prompt || modelProvider,
+              prompt: prompt || 'No Prompt',
             },
           ] as Response[],
         } as ImagesHistoryTypes;
