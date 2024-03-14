@@ -62,7 +62,7 @@ const cohereNewChat = async (req: Request, res: Response) => {
     const chatName = await addChatName(prompt, cohereMessage);
     const newChat = new CohereHistoryModel({
       chatName: chatName,
-      botName: 'Cohere',
+      modelName: 'Cohere',
       history: [
         {
           sender: 'user',

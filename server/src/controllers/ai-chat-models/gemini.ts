@@ -50,7 +50,7 @@ async function geminiNewChat(req: Request, res: Response) {
 
         const newChat = new GeminiHistoryModel({
           chatName: chatName,
-          botName: 'Gemini',
+          modelName: 'Gemini',
           history: [
             {
               sender: 'user',

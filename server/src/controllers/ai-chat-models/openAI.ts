@@ -70,7 +70,7 @@ const openAiNewChat = asyncHandler(async (req: Request, res: Response) => {
 
       const newChat = new OpenAIHistoryModel({
         chatName: chatName,
-        botName: 'ChatGPT',
+        modelName: 'ChatGPT',
         history: [
           {
             sender: 'user',
