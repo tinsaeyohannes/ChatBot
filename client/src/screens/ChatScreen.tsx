@@ -163,9 +163,9 @@ const ChatScreen: FC<ChatScreenProps> = ({
                       }}
                       style={styles.senderPic}
                     />
-                  ) : userChat.botName === 'ChatGPT' ? (
+                  ) : userChat.modelName === 'ChatGPT' ? (
                     <ChatGptIcon />
-                  ) : userChat.botName === 'Cohere' ? (
+                  ) : userChat.modelName === 'Cohere' ? (
                     <CohereIcon />
                   ) : (
                     <GeminiIcon />
@@ -173,7 +173,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
                 </View>
                 <View>
                   <Text style={styles.senderName}>
-                    {message.sender === 'user' ? 'You' : userChat?.botName}
+                    {message.sender === 'user' ? 'You' : userChat?.modelName}
                   </Text>
                   <Text selectable style={styles.message}>
                     {message.message}
@@ -181,7 +181,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
                   <Text style={styles.date}>
                     {message.createdAt
                       ? formatDate(message?.createdAt)
-                      : formatDate(new Date(), 'mm:ss')}
+                      : formatDate(new Date())}
                   </Text>
                 </View>
               </View>
@@ -249,6 +249,7 @@ const ChatScreen: FC<ChatScreenProps> = ({
         bottomSheetModalRef={bottomSheetModalRef}
         snapPoints={snapPoints}
         handlePresentModalPress={handlePresentModalPress}
+        setLoading={setLoading}
       />
     </SafeAreaView>
   );
