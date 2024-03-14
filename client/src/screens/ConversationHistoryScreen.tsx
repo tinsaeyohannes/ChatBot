@@ -29,7 +29,9 @@ import type {ImagesHistoryTypes} from '../types/useImageStoreTypes';
 type ConversationHistoryScreenProps = {
   navigation: DrawerNavigationHelpers;
 };
-// type UnifiedHistoryType = ChatHistoryTypes | ImagesHistoryTypes;
+
+type CombinedHistoryTypes = ChatHistoryTypes | ImagesHistoryTypes;
+
 const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
   navigation,
 }): React.JSX.Element => {
@@ -167,7 +169,7 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
       </View>
 
       <FlatList
-        data={updatedConversationHistory}
+        data={updatedConversationHistory as CombinedHistoryTypes[]}
         showsVerticalScrollIndicator={false}
         keyExtractor={item => item._id}
         renderItem={({item, index}) => (
@@ -178,10 +180,11 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                 emptyUserChat();
 
                 console.log('chat conversation', chat);
+
                 if (
-                  chat.botName === 'ChatGPT' ||
-                  chat.botName === 'Cohere' ||
-                  chat.botName === 'Gemini'
+                  chat.modelName === 'ChatGPT' ||
+                  chat.modelName === 'Cohere' ||
+                  chat.modelName === 'Gemini'
                 ) {
                   navigation.navigate('Chat', {chat});
                 } else {
@@ -203,36 +206,37 @@ const ConversationHistoryScreen: FC<ConversationHistoryScreenProps> = ({
                   chatIndex === index && styles.selectedListItem,
                 ]}>
                 <View style={styles.listItem}>
-                  {item.botName === 'dalle' ? (
+                  {item.modelName === 'dalle' ? (
                     <Image
                       source={require('../assets/icons/dalle.png')}
-                      width={25}
-                      height={25}
+                      style={styles.aiIcon}
                     />
-                  ) : item.botName === 'fal' ? (
+                  ) : item.modelName === 'fal' ? (
                     <Image
-                      width={25}
-                      height={25}
+                      style={styles.aiIcon}
                       source={require('../assets/icons/fal.png')}
                     />
-                  ) : item.botName === 'ChatGPT' ? (
+                  ) : item?.modelName === 'ChatGPT' ? (
                     <ChatGptIcon width={25} height={25} />
-                  ) : item.botName === 'Cohere' ? (
+                  ) : item.modelName === 'Cohere' ? (
                     <CohereIcon width={24} height={24} />
                   ) : (
                     <GeminiIcon width={24} height={24} />
                   )}
-                  <Text
-                    style={[
-                      styles.text,
-                      isDarkMode ? styles.lightText : styles.darkText,
-                    ]}>
-                    {truncateString(item?.chatName, 28)}
-                  </Text>
+                  <View>
+                    <Text
+                      style={[
+                        styles.text,
+                        isDarkMode ? styles.lightText : styles.darkText,
+                      ]}>
+                      {truncateString(item?.chatName, 28)}
+                    </Text>
+                    <Text style={styles.modelText}>{item.modelName}</Text>
+                  </View>
                 </View>
 
                 <Text style={[styles.dateText]}>
-                  {item.createdAt ? formatDate(item.createdAt) : ''} ago
+                  {item?.createdAt && formatDate(item?.createdAt)}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -287,19 +291,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  aiIcon: {
+    width: 25,
+    height: 25,
+  },
   text: {
     fontSize: hp(2.2),
-    width: '95%',
   },
   dateText: {
     fontSize: hp(1.5),
     color: 'gray',
+    textAlign: 'right',
   },
   darkText: {
     color: '#000',
   },
   lightText: {
     color: '#fff',
+  },
+  modelText: {
+    color: 'gray',
   },
   upperContainer: {
     minHeight: hp(10),
