@@ -10,7 +10,7 @@ export interface ConversationTurn {
 export interface ConversationHistoryDocument extends Document {
   _id?: ObjectId;
   chatName: string;
-  botName: string;
+  modelName: string;
   history: ConversationTurn[];
 }
 
