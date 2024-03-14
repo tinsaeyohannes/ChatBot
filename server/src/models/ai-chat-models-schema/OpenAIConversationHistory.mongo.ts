@@ -6,7 +6,7 @@ const OpenAIHistorySchema: Schema = new mongoose.Schema(
     chatName: {
       type: String,
     },
-    botName: {
+    modelName: {
       type: String,
       required: true,
     },
