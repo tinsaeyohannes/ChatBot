@@ -9,12 +9,11 @@ const openai = new OpenAI({
 
 const generateImage = async (req: Request, res: Response) => {
   const { prompt }: { prompt: string } = req.body;
+  let statusCode = 500;
   try {
     if (!prompt) {
-      res.status(400).json({
-        error: 'Please enter a prompt',
-      });
-      return;
+      statusCode = 400;
+      throw new Error('Please enter a prompt');
     }
     const response = await openai.images.generate({
       model: 'dall-e-2',
@@ -54,20 +53,18 @@ const generateImage = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error((error as Error).message);
-    res.status(500).json({
+    res.status(statusCode).json({
       error: (error as Error).message,
-      message: 'Internal Server Error!',
     });
   }
 };
 const continueToGenerateImages = async (req: Request, res: Response) => {
   const { chatId, prompt }: { chatId: string; prompt: string } = req.body;
+  let statusCode = 500;
   try {
     if (!chatId) {
-      res.status(400).json({
-        error: 'Chat ID Required!',
-      });
-      return;
+      statusCode = 400;
+      throw new Error('Chat ID Required!');
     }
     if (!prompt) {
       res.status(400).json({
@@ -77,10 +74,8 @@ const continueToGenerateImages = async (req: Request, res: Response) => {
     }
     const chat = await ImageHistoryModel.findById(chatId);
     if (!chat) {
-      res.status(404).json({
-        error: 'Chat not found',
-      });
-      return;
+      statusCode = 404;
+      throw new Error('Chat not found');
     }
     const response = await openai.images.generate({
       model: 'dall-e-2',
@@ -115,9 +110,8 @@ const continueToGenerateImages = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error((error as Error).message);
-    res.status(500).json({
+    res.status(statusCode).json({
       error: (error as Error).message,
-      message: 'Internal Server Error!',
     });
   }
 };
