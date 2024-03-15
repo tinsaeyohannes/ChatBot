@@ -114,7 +114,11 @@ export const useImageStore = create(
           setLoading(false);
         } catch (error) {
           setLoading(false);
+
           console.error(error);
+          if ((url = 'createImage')) {
+            get().emptyUserChat();
+          }
         }
       },
 
@@ -201,6 +205,10 @@ export const useImageStore = create(
         } catch (error) {
           setLoading(false);
           console.error(error);
+
+          if ((url = 'createImage')) {
+            get().emptyUserChat();
+          }
         }
       },
       getAllImageHistories: async () => {
@@ -218,6 +226,19 @@ export const useImageStore = create(
         } catch (error) {
           console.error(error);
         }
+      },
+      emptyUserChat: () => {
+        const {model} = get();
+        set({
+          currentChat: {
+            _id: '',
+            chatName: '',
+            modelName: model,
+            modelType: '',
+            provider: '',
+            history: [],
+          },
+        });
       },
     }),
     {
