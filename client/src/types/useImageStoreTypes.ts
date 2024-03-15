@@ -22,6 +22,7 @@ export type UseImageStoreActionsTypes = {
     scrollRef: React.MutableRefObject<ScrollView | null>,
   ) => Promise<void>;
   getAllImageHistories: () => Promise<void>;
+  emptyUserChat: () => void;
 };
 
 export type Response = {
